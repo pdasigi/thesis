@@ -1,0 +1,113 @@
+Since human language is aimed at other humans who share 
+the same background knowledge, a lot of information is often not explicitly stated
+for the sake of brevity. The implicit knowledge required to understand language varies 
+from simple commonsense in the case of basic conversations, to complex principles that link 
+concepts in more esoteric communications. Consider an example of the former in solving the 
+textual entailment problem given the following premise, and a candidate hypothesis:
+\begin{itemize}
+ \item \textbf{Premise} \textit{Children and parents are splashing water at the pool.}
+ \item \textbf{Hypothesis} \textit{Families are playing outside.}
+\end{itemize}
+The knowledge a human uses to correctly predict that the hypothesis can be inferred from the 
+premise is that \textit{children and parents} typically form \textit{families}, \textit{splashing water} 
+is a kind of \textit{playing}, and a \textit{pool} is expected to be \textit{outside}. Similarly, an 
+automated system that reads a science text book to answer the following 
+question requires the knowledge of properties of materials.
+\begin{itemize}
+ \item \textit{Which of the following is the best conductor of electricity?} 
+ A. \textit{glass rod} B. \textit{wooden stick} C. \textit{plastic straw} D. \textit{metal nail}
+\end{itemize}
+
+%TODO: Better definition of NLU
+Natural Language Understanding (NLU) or Machine Reading (MR) systems process human generated text 
+(or speech) at a deep semantic level and organize the information in a way that
+is useful for 
+downstream applications such as textual entailment, summarization and
+non-factoid question answering. 
+Recent advances in NLU rely heavily on representation learning or deep learning
+approaches that model 
+text meaning in context. While these methods have been successfully used to represent meaning
+of words in the context of other words, and thus learn complex functions of their distributional
+properties, the other aspects of semantics, like those needed in the examples above are out of their reach.
+% What are the other aspects of semantics? And why do distributional models not capture them?
+%TODO: Propose a generic formulation of the problem
+%TODO: Lead to the need for external inputs
+Fortunately, the additional knowledge humans would use to do deep semantic processing is encoded, to
+some extent in knowledge bases (KB) and ontologies. However, using that information in NLU systems is a 
+hard task. Firstly, while linking the words being read to the structured knowledge
+in a KB, an automated system faces ambiguity. For example, with lexical ontologies like WordNet, 
+we get useful type hierarchies like \textit{parent is-a ancestor is-a person} and \textit{pool is-a body-of-water} 
+and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, finding the 
+relevant parts of the KB given the text being processed is a challenge. For example, assuming we have a KB that encodes
+the properties of materials, to answer the question in the second example above, we still have to 
+find the conducting properties, and possibly generalize the properties of various specific metals to
+infer that metals are generally good conductors of electricity.
+
+%Modify the generic formulation to incorporate knowledge
+
+The goal of this thesis is to find the limitations of distributional and the ontological 
+sources of information and use this knowledge to build hybrid NLU systems that can successfully 
+incorporate structured background knowledge in deep learning models. The fact
+that the two sources of semantic information are fundamentally different 
+makes this challenging. While distributional approaches encode meaning in a
+continuous and an abstract fashion, meaning in KBs is symbolic and discrete. 
+I will dedicate a major chunk of this thesis to methods of incorporating
+symbolic knowledge of various kinds in neural networks, and learning 
+distributions over the discrete concepts of the KB conditioned on the context,
+to deal with exceptions in language.
+
+
+% TODO: Show a generic deep learning pipeline for NLU and talk about which parts can be improved and how.
+
+\section{Outline}
+In the first part of this thesis, I will explore the limits of purely distributional models
+and study the kinds of information that cannot be modeled by them. A candidate problem for this
+exercise is semantic anomaly detection, which involves automatically 
+identifying real world commonsense violations in text. I shall describe an annotation
+effort that resulted in newswire headlines manually labeled with the degree
+of surprise associated with them. The task is to build a model that can identify the highly
+surprising headlines as anomalies. This is different from the usual Language Modeling (LM) problem
+because even the semantic anomalies are well-formed sentences that can be well-understood. Consequently,
+the model needs to discriminate between sentences at a semantic level deeper than surface fluency.
+I shall explore to what extent neural network language models (NNLM), the current state of the art in LM,
+are applicable in semantic anomaly detection. A popular technique used to avoid normalizing the probabilities
+over the entire vocabulary in NNLM is Noise Contrastive Estimation (NCE), which modifies the problem of 
+building a generative model into that of building a discriminative one to distinguish the data distribution
+from a predefined noise distribution. A challenge in building NNLM for semantic anomaly detection is that defining 
+the noise distribution in this case is not trivial. One way to address this challenge is to use ideas from 
+adversarial networks, where the noise samples themselves are generated by a neural network whose complexity
+is comparable to that of the network that discriminates the noise from the data. A baseline model for this 
+problem is a previously published supervised Recursive Neural Network trained for the same problem.
+
+
+Next, I will describe a method to incorporate selectional 
+preferences in Machine Reading. This involves a variant of Long Short-Term
+Memory (LSTM) based Recurrent Neural Networks (RNN) that use information
+from WordNet, a lexical 
+ontology. The hybrid model looks at WordNet synsets, and the hypernym hierarchies of the
+words being processed so that the 
+LSTM is aware of their different senses, and the corresponding type information.
+The ontology aware LSTM (OntoLSTM) learns to attend to the appropriate sense,
+and the relevant type 
+(either the most specific concept or a generalization by choosing a hypernym of
+the word), conditioned on the context and the end-objective. I show that when
+trained in an 
+unsupervised setting as a Language Model (LM), OntoLSTM has a lower perplexity
+than traditional LSTMs, and also does well at unsupervised Word Sense
+Disambiguation (WSD). In a supervised setting, 
+it outperforms traditional LSTMs in predicting textual entailment.
+
+The third part of the thesis contains extensions of the idea to model factual knowledge, towards
+systems that answer non-factoid questions, particularly in general science. Such systems 
+need to reason about general principles behind facts, and thus distributional information
+alone is not enough. I will show methods that encode graph based features from KBs relevant to the 
+question, as high dimensional vector representations such that they can provide 
+additional context. Whereas the structured information used in the first part has only one kind of
+relation, the KB used in this part has several relation types. 
+
+The previous two parts of the thesis deal with words or multi-word expressions as units being grounded in KBs. 
+There are other kinds of frame structures that these techniques can be extended to. One example is the rhetorical 
+structure in discourse. The units of operation in this case are clauses instead of words. This is one potential 
+direction for the third part of the thesis. Another direction is automatic construction of lexical ontologies in 
+low resource languages. Applying the techniques described in the second part, we may be able to induce senses and 
+hierarchies of concepts in a new language using only distributional information.

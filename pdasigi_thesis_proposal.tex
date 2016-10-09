@@ -47,7 +47,7 @@
 %initialize page style, so contents come out right (see bot) -mjz
 \pagestyle{empty}
 
-\title{ %% {\it \huge Thesis Proposal}\\
+\title{ {\it \huge Thesis Proposal}\\
 {\bf Knowledge-aware Natural Language Understanding}}
 \author{Pradeep Dasigi}
 \date{}
@@ -71,9 +71,10 @@ Sumit Chopra
 
 \maketitle
 
-\begin{dedication}
-
-\end{dedication}
+% TODO: Uncomment this for the dissertation
+% \begin{dedication}
+% 
+% \end{dedication}
 
 \pagestyle{plain} % for toc, was empty
 
@@ -84,9 +85,10 @@ Sumit Chopra
 
 \end{abstract}
 
-\begin{acknowledgments}
-
-\end{acknowledgments}
+% TODO: Uncomment this for the dissertation
+% \begin{acknowledgments}
+% 
+% \end{acknowledgments}
 
 
 
@@ -118,15 +120,15 @@ Sumit Chopra
 
 
 \chapter{Introduction}
-\input{introduction}
+\input{chapters/introduction}
 \chapter{Learning Representations Using Knowledge: Ontology-Aware Recurrent Neural Networks}
-\input{ontolstm}
+\input{chapters/ontolstm}
 \chapter{Reasoning Using Knowledge: Memory Networks for Deep Reasoning}
-\input{memnet_qa}
+\input{chapters/memnet_qa}
 \chapter{Proposed Work}
-\input{proposed_work}
+\input{chapters/proposed_work}
 \chapter{Conclusion}
-\input{conclusion}
+\input{chapters/conclusion}
 
 %\appendix
 %\include{appendix}

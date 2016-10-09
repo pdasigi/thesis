@@ -4,7 +4,7 @@ In the case of Semantic Parsing, the output is a logical form that can be querie
 problem of identifying whether the truth of some text provided as a hypothesis follows from that of another text provided as a premise. Sentiment Analysis is the process of 
 automatically categorizing the opinions expressed in the inputs towards specific targets. All these tasks require encoding the semantics of the input in a way that is
 at least good enough to perform well at the given task, with the inherent assumption that an improvement in the task performance correlates with an improvement in the
-quality of the semantic representation, or in other words the understanding capability of the computational system.
+quality of the semantic representation or in other words, the understanding capability of the computational system.
 % TODO: Improve the following statement and uncomment it.
 %Each task defines a restricted set of linguistic aspects that can be taught to a computational system, and are easy enough to automatically evaluate
 %on unseen examples, but are complex enough for the representation techniques to be applicable to understanding the unrestricted set.
@@ -14,15 +14,19 @@ A generic NLU system can thus be succinctly described using the following two eq
  \mathbf{e} &= \mathtt{encode}(\mathbf{I}) \label{eq:generic_encoding}\\
  \mathbf{o} &= \mathtt{predict}(\mathbf{e}) \label{eq:generic_prediction}
 \end{align}
-where $\mathbf{I}$ is the set of textual inputs to the NLU system. For example, $\mathbf{I}$  are single sentences in Sentiment Analysis and pairs of sentences in Textual Entailment. $\textbf{e}$ are intermediate 
+where $\mathbf{I}$ is the set of textual inputs to the NLU system. 
+%TODO: Concrete examples of systems that fit in this paradigm.
+For example, $\mathbf{I}$  are single sentences in Sentiment Analysis and pairs of sentences in Textual Entailment. $\textbf{e}$ are intermediate 
 encoded semantic representations of the inputs (which may or may not be task specific), and $\mathbf{o}$ are the final task specific predictions. For example, in Sentiment Analysis or Textual Entailment, 
 $\mathbf{o}$ are categorical labels indicating the sentiment or entailment respectively, and in the case of Semantic Parsing, they are structured outputs or parses. In older feature-rich methods for NLU, 
-Equation~\ref{eq:generic_encoding} is a mapping of the inputs to a hand designed feature space, typically containing patterns over n-grams or shallow linguistic features like part-of-speech tags. In such systems,
-the modeling emphasis was more on the prediction component, and the encoding component did not involve any learning. More recent systems use representation learning techniques to also learn the parameters of the
+Equation~\ref{eq:generic_encoding} is a mapping of the inputs to a hand designed feature space, typically containing patterns over word classes based on part-of-speech \cite{corley2005measuring} or Wordnet synsets \cite{moldovan2001logic} 
+shallow linguistic features like dependencies \cite{bos2005recognising} or named entities \cite{tatu2005semantic}. In such systems,
+the modeling emphasis was more on the prediction component, and the encoding component did not involve any learning. More recent systems \cite{weston2014memory,hermann2015teaching,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN} 
+use representation learning techniques to also learn the parameters of the
 $\mathtt{encode}$ function, and typically this is done jointly with learning the parameters of the $\mathtt{predict}$ function.
 
 \section{External Knowledge}
-An issue with the formulation of the problem in Equation~\ref{eq:generic_encoding} and Equation~\ref{eq:generic_prediction} is that they are missing external knowledge. 
+An issue with the formulation of the problem in Equation~\ref{eq:generic_encoding} and Equation~\ref{eq:generic_prediction} is that they are missing a key input: \textbf{contextual knowledge}. 
 Since human language is aimed at other humans who share 
 the same background knowledge, a lot of information is often not explicitly stated
 for the sake of brevity. The implicit knowledge required to understand language varies 
@@ -35,13 +39,14 @@ textual entailment problem given the following premise, and a candidate hypothes
 \end{itemize}
 The knowledge a human uses to correctly predict that the hypothesis can be inferred from the 
 premise is that \textit{children and parents} typically form \textit{families}, \textit{splashing water} 
-is a kind of \textit{playing}, and a \textit{pool} is expected to be \textit{outside}. Similarly, an 
-automated system that reads a science text book to answer the following 
-question requires the knowledge of properties of materials.
+is a kind of \textit{playing}, and a \textit{pool} is expected to be \textit{outside}. A different kind of knowledge 
+is required by an  automated reading comprehension system that reads a science text book to answer the following 
+question. It needs to reason about the question at hand given some relevant text on properties of materials.
 \begin{itemize}
  \item \textit{Which of the following is the best conductor of electricity?}\\ 
   A. \textit{glass rod}  B. \textit{wooden stick}  C. \textit{plastic straw} D. \textit{metal nail}
 \end{itemize}
+
 Clearly, we need some external knowledge as an input to our NLU systems to perform well at tasks like this.
 Without this additional context, the NLU systems will merely memorize specific patterns seen in the training data
 and cannot generalize to unseen test cases. Accordingly, we modify our NLU equations as follows.
@@ -50,31 +55,32 @@ and cannot generalize to unseen test cases. Accordingly, we modify our NLU equat
  \mathbf{o} &= \mathtt{predict}(\mathbf{e}, \mathbf{K}_p) \label{eq:prediction_with_knowledge}
 \end{align}
 where $\mathbf{K}_e$ and $\mathbf{K}_p$ represent the knowledge required for encoding and prediction respectively. 
+They serve different purposes as described below.
 
+\subsection{Knowledge-aware encoding}
+$\mathbf{K}_e$ is additional knowledge used to better compose the units in input text. Particularly, 
+Examples of $\mathbf{K}_e$ include hypernym trees from WordNet for
+incorporate commonsense information about concepts while composing sentences, and subgraph features from Freebase to encode relations
+between entities seen in the input text. These additional inputs are relevant to the entailment problem given above.
 
+\subsection{Knowledge-aware reasoning}
+$\textbf{K}_p$ inputs might include additional text that provides support for reasoning about the task at hand. Recent work in machine reading comprehension using 
+attentive readers \cite{hermann2015teaching} and memory networks \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN} can be viewed as different instantiations
+of the \texttt{predict} function.
 
-The additional knowledge humans use to do deep semantic processing is encoded, to
-some extent in knowledge bases (KB) and ontologies. However, using that information in NLU systems is a 
-hard task. Firstly, while linking the words being read to the structured knowledge
+\subsection{Issues with incorporating external knowledge}
+Adding external knowledge inputs to NLU systems is not straightforward.  Firstly, while linking the text being read to some structured knowledge
 in a KB, an automated system faces ambiguity. For example, with lexical ontologies like WordNet, 
 we get useful type hierarchies like \textit{parent is-a ancestor is-a person} and \textit{pool is-a body-of-water} 
-and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, finding the 
-relevant parts of the KB given the text being processed is a challenge. For example, assuming we have a KB that encodes
-the properties of materials, to answer the question in the second example above, we still have to 
-find the conducting properties, and possibly generalize the properties of various specific metals to
-infer that metals are generally good conductors of electricity.
-
-
-The goal of this thesis is to find the limitations of distributional and the ontological 
-sources of information and use this knowledge to build hybrid NLU systems that can successfully 
-incorporate structured background knowledge in deep learning models. The fact
-that the two sources of semantic information are fundamentally different 
+and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, the fact that the two sources of semantic information are fundamentally different 
 makes this challenging. While distributional approaches encode meaning in a
-continuous and an abstract fashion, meaning in KBs is symbolic and discrete. 
-I will dedicate a major chunk of this thesis to methods of incorporating
-symbolic knowledge of various kinds in neural networks, and learning 
-distributions over the discrete concepts of the KB conditioned on the context,
-to deal with exceptions in language.
+continuous and an abstract fashion, meaning in KBs is symbolic and discrete. A major chunk of this thesis will be dedicated to learning 
+distributions over the discrete concepts of the KB conditioned on the context, to deal with exceptions in language.
+When the external knowledge is used for reasoning, finding the 
+relevant parts of the provided knowledge given the text being processed is a challenge. 
+The goal of this thesis is to find the limitations of various knowledge sources -- structured and unstructured -- and use this information 
+to build hybrid NLU systems that can successfully incorporate real world knowledge in deep learning models.
+
 
 \section{Generic NLU Pipeline}
 

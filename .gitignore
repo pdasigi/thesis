@@ -2,6 +2,7 @@
 *.aux
 *.log
 *.toc
+*.tex~
 
 # PDF output - usually a bad idea to keep this in Git
 *.pdf

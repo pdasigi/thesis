@@ -26,6 +26,7 @@ use representation learning techniques to also learn the parameters of the
 $\mathtt{encode}$ function, and typically this is done jointly with learning the parameters of the $\mathtt{predict}$ function.
 
 \section{External Knowledge}
+\label{sec:intro_external_knowledge}
 An issue with the formulation of the problem in Equation~\ref{eq:generic_encoding} and Equation~\ref{eq:generic_prediction} is that they are missing a key input: \textbf{contextual knowledge}. 
 Since human language is aimed at other humans who share 
 the same background knowledge, a lot of information is often not explicitly stated
@@ -51,25 +52,32 @@ Clearly, we need some external knowledge as an input to our NLU systems to perfo
 Without this additional context, the NLU systems will merely memorize specific patterns seen in the training data
 and cannot generalize to unseen test cases. Accordingly, we modify our NLU equations as follows.
 \begin{align}
- \mathbf{e} &= \mathtt{encode}(\mathbf{I}, \mathbf{K}_e) \label{eq:encoding_with_knowledge}\\
- \mathbf{o} &= \mathtt{predict}(\mathbf{e}, \mathbf{K}_p) \label{eq:prediction_with_knowledge}
+ \mathbf{e} &= \mathtt{encode\_with\_knowledge}(\mathbf{I}, \mathbf{K}_e) \label{eq:encoding_with_knowledge}\\
+ \mathbf{e}_{K_p} &= \mathtt{encode}(\mathbf{K}_p) \\ \label{eq:knowledge_encoding}
+ \mathbf{o} &= \mathtt{predict\_with\_knowledge}(\mathbf{e}, \mathbf{e}_{K_p}) \label{eq:prediction_with_knowledge}
 \end{align}
 where $\mathbf{K}_e$ and $\mathbf{K}_p$ represent the knowledge required for encoding and prediction respectively. 
 They serve different purposes as described below.
 
 \subsection{Knowledge-aware encoding}
-$\mathbf{K}_e$ is additional knowledge used to better compose the units in input text. Particularly, 
+$\mathbf{K}_e$ is additional knowledge used to better compose the units in input text. Particularly, this allows for
+obtaining input encoding that respects the selectional restrictions of the units being composed.
 Examples of $\mathbf{K}_e$ include hypernym trees from WordNet for
 incorporate commonsense information about concepts while composing sentences, and subgraph features from Freebase to encode relations
-between entities seen in the input text. These additional inputs are relevant to the entailment problem given above.
+between entities seen in the input text. \cite{moldovan2001logic} is an examples of a feature-rich system that encoded input sentences in the 
+context of external knowledge. Chapter~\ref{chapter:ontolstm} describes an representation-learning application of knowledge-aware encoding where 
+we show the advantages of incorporating WordNet information in recurrent neural networks for encoding sentences. In addition to this application,
+we propose a technique for encoding logical forms incorporating subgraph features from Freebase in Chapter~\ref{chapter:proposed_work}.
 
 \subsection{Knowledge-aware reasoning}
-$\textbf{K}_p$ inputs might include additional text that provides support for reasoning about the task at hand. Recent work in machine reading comprehension using 
+$\textbf{K}_p$ inputs allow the prediction step to reason in the context of additional knowledge. Recent work in machine reading comprehension using 
 attentive readers \cite{hermann2015teaching} and memory networks \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN} can be viewed as different instantiations
-of the \texttt{predict} function.
+of the $\mathtt{predict\_with\_knowledge}$ function, where $\textbf{K}_p$ is some background text that needs to be understood to answer a question about it. 
+In Chapter~\ref{chapter:memnet_qa}, we describe a generalized neural network formulation of reasoning in the context of background information,
+and apply it to the problem of answering science questions.
 
 \subsection{Issues with incorporating external knowledge}
-Adding external knowledge inputs to NLU systems is not straightforward.  Firstly, while linking the text being read to some structured knowledge
+Adding external knowledge inputs to NLU systems is not straightforward.  Firstly, while linking text being read to some structured knowledge
 in a KB, an automated system faces ambiguity. For example, with lexical ontologies like WordNet, 
 we get useful type hierarchies like \textit{parent is-a ancestor is-a person} and \textit{pool is-a body-of-water} 
 and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, the fact that the two sources of semantic information are fundamentally different 
@@ -79,36 +87,30 @@ distributions over the discrete concepts of the KB conditioned on the context, t
 When the external knowledge is used for reasoning, finding the 
 relevant parts of the provided knowledge given the text being processed is a challenge. 
 The goal of this thesis is to find the limitations of various knowledge sources -- structured and unstructured -- and use this information 
-to build hybrid NLU systems that can successfully incorporate real world knowledge in deep learning models.
-
-
-\section{Generic NLU Pipeline}
-
-% TODO: Show a generic deep learning pipeline for NLU and talk about which parts can be improved and how.
+to build hybrid NLU systems that can successfully incorporate real world knowledge in deep learning models. We now describe how this thesis is organized.
 
 \section{Outline}
-In the first part of this thesis, I will explore the limits of purely distributional models
-and study the kinds of information that cannot be modeled by them. A candidate problem for this
-exercise is semantic anomaly detection, which involves automatically 
-identifying real world commonsense violations in text. I shall describe an annotation
-effort that resulted in newswire headlines manually labeled with the degree
-of surprise associated with them. The task is to build a model that can identify the highly
-surprising headlines as anomalies. This is different from the usual Language Modeling (LM) problem
-because even the semantic anomalies are well-formed sentences that can be well-understood. Consequently,
-the model needs to discriminate between sentences at a semantic level deeper than surface fluency.
-I shall explore to what extent neural network language models (NNLM), the current state of the art in LM,
-are applicable in semantic anomaly detection. A popular technique used to avoid normalizing the probabilities
-over the entire vocabulary in NNLM is Noise Contrastive Estimation (NCE), which modifies the problem of 
-building a generative model into that of building a discriminative one to distinguish the data distribution
-from a predefined noise distribution. A challenge in building NNLM for semantic anomaly detection is that defining 
-the noise distribution in this case is not trivial. One way to address this challenge is to use ideas from 
-adversarial networks, where the noise samples themselves are generated by a neural network whose complexity
-is comparable to that of the network that discriminates the noise from the data. A baseline model for this 
-problem is a previously published supervised Recursive Neural Network trained for the same problem.
+% In the first part of this thesis, I will explore the limits of purely distributional models
+% and study the kinds of information that cannot be modeled by them. A candidate problem for this
+% exercise is semantic anomaly detection, which involves automatically 
+% identifying real world commonsense violations in text. I shall describe an annotation
+% effort that resulted in newswire headlines manually labeled with the degree
+% of surprise associated with them. The task is to build a model that can identify the highly
+% surprising headlines as anomalies. This is different from the usual Language Modeling (LM) problem
+% because even the semantic anomalies are well-formed sentences that can be well-understood. Consequently,
+% the model needs to discriminate between sentences at a semantic level deeper than surface fluency.
+% I shall explore to what extent neural network language models (NNLM), the current state of the art in LM,
+% are applicable in semantic anomaly detection. A popular technique used to avoid normalizing the probabilities
+% over the entire vocabulary in NNLM is Noise Contrastive Estimation (NCE), which modifies the problem of 
+% building a generative model into that of building a discriminative one to distinguish the data distribution
+% from a predefined noise distribution. A challenge in building NNLM for semantic anomaly detection is that defining 
+% the noise distribution in this case is not trivial. One way to address this challenge is to use ideas from 
+% adversarial networks, where the noise samples themselves are generated by a neural network whose complexity
+% is comparable to that of the network that discriminates the noise from the data. A baseline model for this 
+% problem is a previously published supervised Recursive Neural Network trained for the same problem.
 
-
-Next, I will describe a method to incorporate selectional 
-preferences in Machine Reading. This involves a variant of Long Short-Term
+In Chapter~\ref{chapter:ontolstm}, we describe a method to incorporate selectional 
+preferences in algorithms that encode sentences. This involves a variant of Long Short-Term
 Memory (LSTM) based Recurrent Neural Networks (RNN) that use information
 from WordNet, a lexical 
 ontology. The hybrid model looks at WordNet synsets, and the hypernym hierarchies of the
@@ -117,24 +119,20 @@ LSTM is aware of their different senses, and the corresponding type information.
 The ontology aware LSTM (OntoLSTM) learns to attend to the appropriate sense,
 and the relevant type 
 (either the most specific concept or a generalization by choosing a hypernym of
-the word), conditioned on the context and the end-objective. I show that when
-trained in an 
-unsupervised setting as a Language Model (LM), OntoLSTM has a lower perplexity
-than traditional LSTMs, and also does well at unsupervised Word Sense
-Disambiguation (WSD). In a supervised setting, 
-it outperforms traditional LSTMs in predicting textual entailment.
+the word), conditioned on the context and the end-objective. We show that the sentence representations 
+produced by OntoLSTM are better than those produced by LSTMs when used with identical prediction 
+components for predicting textual entailment. We also visualize the attention scores assigned to the hypernyms 
+of words in the premises and hypotheses and show that OntoLSTM is indeed learning useful generalizations of words
+that help the learned representations perform better at textual entailment.
 
-The third part of the thesis contains extensions of the idea to model factual knowledge, towards
-systems that answer non-factoid questions, particularly in general science. Such systems 
-need to reason about general principles behind facts, and thus distributional information
-alone is not enough. I will show methods that encode graph based features from KBs relevant to the 
-question, as high dimensional vector representations such that they can provide 
-additional context. Whereas the structured information used in the first part has only one kind of
-relation, the KB used in this part has several relation types. 
+In Chapter~\ref{chapter:memnet_qa} we describe a generalized deep learning architecture for knowledge guided reasoning.
+The pipeline follows the generic specification in Section~\ref{sec:intro_external_knowledge} and has configurable components
+for encoding and prediction. We identify that the memory network models in \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN}
+and the attentive reader model from \cite{hermann2015teaching} are specific instantiations of our generic knowledge guided reasoning model.
+Unlike prior work that evaluated these models on selecting answers from background text, we evaluate our model on answering science questions, 
+a task that requires more reasoning capabilities.
 
-The previous two parts of the thesis deal with words or multi-word expressions as units being grounded in KBs. 
-There are other kinds of frame structures that these techniques can be extended to. One example is the rhetorical 
-structure in discourse. The units of operation in this case are clauses instead of words. This is one potential 
-direction for the third part of the thesis. Another direction is automatic construction of lexical ontologies in 
-low resource languages. Applying the techniques described in the second part, we may be able to induce senses and 
-hierarchies of concepts in a new language using only distributional information.
+Chapter~\ref{chapter:proposed_work} contains proposed work. Firstly, as an extension to the idea of knowledge augmented encoding, 
+we propose incorporating probabilistic logic into our generic NLU pipeline. Particularly, we propose using from TensorLog \cite{cohen2016tensorlog},
+a differentiable deductive database in models that recursively compose propositions in logical forms. Secondly, we propose better techniques for 
+evaluating NLU systems. The current 

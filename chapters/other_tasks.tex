@@ -240,3 +240,34 @@ $h(e)$ is the output of the logistic function.  Concretely,
 \end{equation*}
 We implement the functions and perform stochastic gradient descent using Theano
 \cite{bergstra2010theano}.
+
+\subsection{Results}
+We evaluate the performance of event composition by comparing the predicted
+labels from the classifier against the ones given by MACE.
+We merge the two anomaly classes and calculate accuracy of the binary
+classifier, and the precision and recall of anomaly detection.
+\begin{table}
+\begin{center}
+  \begin{tabular}[c]{|c|c|c|}
+ \hline
+ \multicolumn{2}{|c|}{Accuracy} & 65.44\% \\
+ \hline
+ \multirow{2}{*}{Anomalous} & Precision & 56.55\% \\
+ \cline{2-3}
+ & Recall & 48.22\% \\
+ \hline
+ \multirow{2}{*}{Normal} & Precision & 64.62\% \\
+ \cline{2-3}
+ & Recall & 77.66\% \\
+ \hline
+  \end{tabular}
+\end{center}
+ \caption{Classification Performance}
+ \label{table:res1}
+\end{table}
+Table~\ref{table:res1} shows these results.  It can be noted that the accuracy
+is significantly higher than a random 
+expectation of 50\%.  The precision of a random classifier in predicting
+anomalous events is expected to be 41\%, since 
+that is the percentage of anomaly labels in our reference set as described in
+Section~\ref{sec:annot}.

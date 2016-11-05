@@ -1,8 +1,8 @@
-In this chapter, we propose one instance of encoding textual inputs in the context of external knowledge. The model shown here is an ontology-aware recurrent neural network, an encoder that has access to the token level semantic information from an ontology (Wordnet).
+In this chapter, we show two instances of encoding textual inputs in the context of external knowledge. The first model shown here is an ontology-aware recurrent neural network, an encoder that has access to the token level semantic information from an ontology (Wordnet).
 Despite their empirical success, type-level word embeddings ignore the semantic ambiguity of lexical items. We address this problem by using Wordnet to find the collection of semantic concepts manifested by a word type, and represent a word type as a collection of concept embeddings. We show
-how to integrate the proposed ontology-aware lexical representation with recurrent neural networks (RNNs) to model token sequences. 
+how to integrate the proposed ontology-aware lexical representation with recurrent neural networks (RNNs) to model token sequences. The second model is proposed 
 
-\section{Introduction}
+\section{Ontology Aware Recurrent Neural Networks}
 A human can process new information in a sentence, use context to resolve ambiguities, and use commonsense to make relevant generalizations.
 For instance, when Alice tells Bob \textit{``Children and parents are splashing water at the pool,''} Bob may reasonably expect that Alice means the `swimming pool' sense of the word `pool' and also infer that \textit{``Children are playing outside with adult supervision.''}
 In contrast, semantic ambiguity and commonsense inference constitute major challenges for computational models of language \citep{yarowsky:94,tanaka:07,celikyilmaz:13,pasca:14}.
@@ -26,15 +26,12 @@ but mapping tokens to entities in WordNet is a challenge. One needs to at least 
 \begin{figure}[t]
 \begin{center}
 \includegraphics[width=3in]{figures/tensor2.png}
-\caption{Our lexical representation for the word \textit{pool} as a noun.
-Horizontal dimension shows senses, vertical dimension shows hypernyms for each word sense.
-The third dimension represents the embedding of each concept, shared across multiple word types.
-}
+\caption{Example of ontology-aware lexical representation}
 \label{fig:ontolstm_tensor}
 \end{center}
 \end{figure}
 
-\section{Related Work}
+\subsection{Related Work}
 % concept embeddings
 Previous work used lexical ontologies such as WordNet to improve \textit{pretrained} word embeddings at the \textit{type level}.
 \cite{yu:14} extended the CBOW model \citep{mikolov:13} by adding an extra term in the training objective for generating words conditioned on similar words according to a lexicon.
@@ -46,8 +43,8 @@ Related to the idea of concept embeddings is \cite{rothe:15} who estimated WordN
  In contrast, our work focuses on estimating token-level word embeddings given concept embeddings.
  Related to token-level embeddings is \cite{belanger:15} who proposed a Gaussian linear dynamical system for estimating token-level word embeddings. However, this approach does not make use of lexical ontologies and is not amenable for joint training with a downstream NLP task.
 
-\section{Ontology-aware Recurrent Neural Networks}
-\subsection{Lexical Representation}
+\subsection{Ontology-aware Recurrent Neural Networks}
+\subsubsection{Lexical Representation}
 \label{sec:ontolstm_input_rep}
 To address the semantic ambiguity in traditional word embeddings, we represent each word type as a grid of concept embeddings, organized in a third-order tensor (i.e., a 3-dimensional array), as shown in Fig.~\ref{fig:ontolstm_tensor}, 
 which is an example for the word \textit{pool}. The three dimensions correspond to senses, hypernyms per sense, and dimensionality of the synset embeddings respectively. We emphasize that synset embeddings have one-to-one correspondence with WordNet synsets,
@@ -60,7 +57,7 @@ We truncate the tensor or pad it with zeros as needed, since different word type
 With $S$ denoting a predefined, fixed number of senses per word type and $Y$ denoting a predefined, fixed number of generalizations (i.e., number of hypernyms plus one) per word sense, all tensor embeddings are of the same size: $T_w \in \mathbb{R}^{S\times Y \times d}$.
 Unlike type-level representations in the proposed setup, rare words can leverage the concept embedding parameters shared with other words close to them in the WordNet graph structure.
 
-\subsection{Ontology-Aware LSTM (OntoLSTM)}
+\subsubsection{Ontology-Aware LSTM (OntoLSTM)}
 \label{sec:ontolstm}
 Recurrent Neural Networks (RNN) model sequences by repeating the same neural network module (i.e., the same model parameters) for each position in the sequence.
 RNNs have been widely used for several NLP tasks, including language modeling \citep{mikolov:10}, textual entailment \citep{bowman:15}, speech recognition \citep{graves:13}, machine translation \citep{sutskever:14} and dependency parsing \citep{dyer:15}.
@@ -70,8 +67,7 @@ Instead of using type-level word embeddings to represent the input at each posit
 \begin{figure}
   \begin{center}
   \includegraphics[width=5in]{figures/ontolstm_diagram_modified.png}
-  \caption{Schematic of OntoLSTM. $T_{w_t}$ represents the word $w_t$ as described in Section~\ref{sec:ontolstm_input_rep}. $a_{w_t}$ is the attention matrix corresponding to $T_{w_t}$, calculated as a function of $T_{w_t}$ and the output from previous
-  timestep $h_{t-1}$. $i_t$ is the input computed by taking a weighted average of $T_{w_t}$, with weights from $a_{w_t}$.}
+  \caption{Schematic of OntoLSTM}
   \label{fig:ontolstm_model}
   \end{center}
  \end{figure}
@@ -113,7 +109,7 @@ i_t &= \sum_{s, y} p(s|w_t) \times a_t^y(s,y) \times T_{w_t}(s,y) \nonumber
 We call this variant \textbf{$\text{OntoLSTM}_{\text{att}}$}.
 %Note that the number of input representation parameters in both variants of OntoLSTM is not significantly higher than that of the LSTM. This is because the vocabulary sizes are comparable in both models, and tensors in OntoLSTM share many of the same synset representations.
 
-\section{Experiments}
+\subsection{Experiments}
 \label{sec:ontolstm_experiments}
 We evaluate our model on the natural language inference task.
 We show that $\text{OntoLSTM}_{\text{uni}}$ and $\text{OntoLSTM}_{\text{att}}$ improve the test set accuracy of the LSTM baseline by 1.9 and 1.8 absolute points, respectively.
@@ -209,12 +205,12 @@ They use GloVe as pretrained word embeddings while we jointly learn word/concept
 \cite{bowman2016fast}'s LSTM outperforms our LSTM model by 1.5 absolute points on the test set. This may be due to the difference in input representations. Since we learn the synset representations in OntoLSTM, comparison with our LSTM implementations is more sensible.
 The $\text{OntoLSTM}_{\text{uni}}$ outperforms the LSTM model with 1.8 absolute points on the test set, illustrating the utility of the ontology-aware word representations in a controlled experiment.
 
-\section{Analysis}
+\subsection{Analysis}
 \label{sec:discussion}
 \begin{figure}
 \begin{center}
 \includegraphics[width=5in]{figures/ontolstm_snli_comparison.png}
-\caption{Relative attention values for words \textit{manuals} in the premise and \textit{book} in the hypothesis. $\text{OntoLSTM}_{\text{att}}$ correctly predicts this as \textit{entailment} and LSTM gets it wrong. }
+\caption{Relative attention values for words in the premise and in the hypothesis.}
 \label{fig:snli_visualization}
 \end{center}
 \end{figure}
@@ -234,5 +230,6 @@ The following is an example that LSTM gets right and OntoLSTM does not:
 \paragraph{Parameter space:} We note that the model size in LSTM and both variants of OntoLSTM is comparable (11.1M and 12.7M parameters, respectively). This is because the synset representations are shared across words, rendering the vocabulary sizes in OntoLSTM camparable to those in LSTM. We have about 1.7M parameters for the remaining parts of the models in both cases. 
 %\newcite{bowman2016fast} report that they have 3M parameters in their model, none for the input representations themselves.
 
-\section{Proposed Work}
-
+\section{Proposed Work: Augmenting Proposition Encoding using Graph Features}
+As an extension to the implemented ideas above, we propose encoding propositions guided by subgraph features from a knowledge base. Concretely, the inputs that need to be encoded are nested propositions parsed using an open-vocabulary semantic parser. The reason we use an open vocabulary
+semantic parser 

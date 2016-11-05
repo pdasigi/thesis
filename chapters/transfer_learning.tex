@@ -1,0 +1,26 @@
+So far we have evaluated our NLU pipelines by measuring the accuracy of the prediction component at any given task. The encoder component has not been explicitly evaluated.
+This is because we generally view NLU pipelines as end-to-end systems, and do not care about the quality of the encoding as long as it serves as good features for the prediction
+component. In this chapter, we take a different view and try to evaluate the encoder by investigating how well the encoded representations can be transferred across tasks. Transfer
+learning in NLU systems is an attractive line of investigation for various reasons:
+\begin{itemize}
+ \item Not all language understanding tasks come with lots of training data. For some tasks it may be very difficult to get high quality annotations from humans due to factors such as 
+ the task being subjective or requiring domain expertise. Being able to pre-train encoders on one task that has large amounts of training data available (like SNLI \cite{bowman:15} for textual entailment), and use them for similar
+ tasks like paraphrasing or question answering, can address this issue.
+ \item From a language understanding perspective, the transferability of the encoders gives us a clearer idea of what kind of features they are learning.
+ \item Due to the large number of parameters involved, deep neural networks are highly prone to overfitting to the task. Transfer learning can address this problem. 
+\end{itemize}
+
+Transfer learning in neural networks has been well-studied for vision related problems. It has been shown \citep{zeiler2014visualizing} that object recognition models trained on
+ImageNet \citep{deng2009imagenet} can be transfered to other object recognition datasets when the final classifier is retrained to the new dataset. A systematic study of the generality
+of features learned at various layers in deep neural networks trained on natural images was done by \cite{yosinski2014transferable}. For language related problems, there do not exist similar studies.
+There are however multi-task learning efforts for NLP tasks.  A notable example is the work by \cite{collobert2011natural} that showed the benefit of multi-task learning for surface-level NLP tasks 
+like Named Entity Recognition, Part of Speech Tagging and Semantic Role Labeling. In this chapter, we investigate the transferability of the encoder in an NLU system trained on one task, to other similar tasks.
+
+\section{Proposed Work}
+The proposed work in this area involves answering the following concrete questions.
+\begin{enumerate}
+ \item Can different NLU tasks be jointly learned using the same neural network architecture?
+ \item In a scenario where the NLU system is pretrained on a task with large amounts of data, how does the complexity (in terms of number of parameters)
+ of the encoder affect its transferability to other tasks?
+ \item How do external knowledge inputs affect the transferability of the encoder?
+\end{enumerate}

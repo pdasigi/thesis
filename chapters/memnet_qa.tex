@@ -1,4 +1,4 @@
-\section{Introduction}
+\section{Generic View of Memory Networks}
 Memory Networks (MemNN) \citep{weston2014memory} are a class of learning models
 that combine inference with long-term memory. Unlike Recurrent Neural Networks
 (RNN) that model language \citep{mikolov2010recurrent}, and their variants with
@@ -28,19 +28,16 @@ implementing appropriate functions. We experiment with various configurations of
 these components and show results on the science QA dataset. It has to be noted
 that given good representations of the question, candidate answers and
 background information, QA can be seen as a textual entailment problem.
-Following this observation, we pretrain the encoders and the entailment module
-using Stanford's Natural Language Inference (SNLI) dataset
 \citep{bowman2015large}.
 
-\section{Approach}
+\section{Memory Network Setup}
 \begin{figure*}
 \begin{center}
-  \includegraphics[width=6in]{figures/memory_network_generic.png}
+  \includegraphics[width=6.5in]{figures/memory_network_generic.png}
   \caption{Schematic showing a generic view of end-to-end memory network}
   \label{fig:memnet}
   \end{center}
 \end{figure*}
-\subsection{Memory Network Setup}
 Figure~\ref{fig:memnet} shows the setup of our memory network model, which is a
 generalization of the MemN2N model \citep{sukhbaatar2015end}. Our model takes as
 input a set of $N$ background sentences indexed as $\{b_i\}_{i=1}^N$, such that
@@ -65,14 +62,14 @@ background, $s^H$ from the final hop $H$ to the \texttt{PredictAnswer} function.
 It can be seen that MemN2N fits into this setup with the following
 configuration:
 % TODO(pradeep): MemN2N actually has two Embedding matrices encoding background
-for input and output. Also, there is another variant which encodes positions of
-the words too.
+% for input and output. Also, there is another variant which encodes positions of
+% the words too.
 \begin{flalign*}
 &\texttt{EncodeQuery}(q) = \text{Embedding}_q(q) \\
 &\texttt{EncodeBackground}(b_i) = \text{Embedding}_b(b_i) \\
 &\texttt{SelectMemory}(u^{h-1}, B) = \text{softmax}(B.u^{h-1}).B \\
 &\texttt{UpdateMemory}(u^{h-1}, s^h) = u^{h-1} + s^h \\
-&\texttt{PredictAnswer}(s^H) = \text{softmax}(W.s^H)
+&\texttt{PredictAnswer}(u_0, s^H) = \text{softmax}(W.s^H)
 \end{flalign*}
 where $\text{Embedding}_q(.)$ and $\text{Embedding}_b(.)$ are simply bag of
 words models that aggregate the vector representations of all the words given by
@@ -85,11 +82,49 @@ transform the problem of answering science questions into a textual entailment
 problem. That is, given a multiple choice question with answer options, we
 convert the combination of the question and each of the options into a
 statement, and check whether the statement can be entailed from relevant
-background information. The datasets used are described in
-Section~\ref{sec:data}. Given this setup, the \texttt{PredictAnswer} function
+background information. Given this setup, the \texttt{PredictAnswer} function
 essentially becomes an entailment function.
 
 \section{Preliminary Results}
+We now show some preliminary results of our memory network implementation on science question answering with the following change in configuration configuration:
+\begin{flalign*}
+&\texttt{PredictAnswer}(u_0, s^H) = \texttt{HeuristicMatch}(u_0, s_h)
+\end{flalign*}
+where \texttt{HeuristicMatch}(.) is the heuristic matching function proposed by \cite{mou2015recognizing} for textual entailment, also used for our experiments with SNLI data in 
+Chapter~\ref{chapter:ontolstm}. The dataset used for these experiments is questions collected from 4th and 8th grade science text books which look like the following.
+\begin{itemize}
+ \item[] The length of daylight changes as the seasons change during the year. What causes these changes in daylight?
+ \begin{enumerate}[(a)]
+  \item Earth's tilt on its axis
+  \item Sun's tilt on its axis
+  \item Earth spinning on its axis
+  \item Sun spinning on its axis
+ \end{enumerate}
+\end{itemize}
+We built a Lucene index over a big collection of sentences related to general science from various sources and extracted relevant background sentences for each question by querying it. For each of the
+options, we query the Lucene index with a combination of the option text and the question. We thus transform questions like the one shown above into four entailment problems where the combination of the
+question and one of the options is the hypothesis and the relevant background sentences are the premises. The final answer is picked by selecting the option (combined with the question) that has the highest
+entailment score. This is done by passing the final entailment scores through a softmax layer. Preliminary results using our model are shown in Table~\ref{tab:memnet_qa_results}, using two different encoders
+to encode the input sentences and background. We also show the accuracy of a baseline system based on Lucene, that selects for every question, the option that results in the highest relevance score in the process
+described above for retrieving background sentences. It can be seen that the simple baseline does better than the memory network model.
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|c|}
+    \hline
+    \textbf{Encoder} & \textbf{Test Acc.}\\
+    \hline
+    BOW & 38.7\% \\
+    GRU & 32.9\% \\
+    \hline
+    \hline
+    \textbf{Lucene baseline} & \% \\
+    \hline
+    \end{tabular}
+    \caption{Results of our Memory Network on ScienceQA in comparison with a Lucene baseline}
+    \label{tab:memnet_qa_results}
+\end{table}
+
 
 \subsection{Analysis}
 

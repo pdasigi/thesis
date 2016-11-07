@@ -1,6 +1,6 @@
 In this chapter, we show two instances of encoding textual inputs in the context of external knowledge. The first model shown here is an ontology-aware recurrent neural network, an encoder that has access to the token level semantic information from an ontology (Wordnet).
 Despite their empirical success, type-level word embeddings ignore the semantic ambiguity of lexical items. We address this problem by using Wordnet to find the collection of semantic concepts manifested by a word type, and represent a word type as a collection of concept embeddings. We show
-how to integrate the proposed ontology-aware lexical representation with recurrent neural networks (RNNs) to model token sequences. The second model is proposed 
+how to integrate the proposed ontology-aware lexical representation with recurrent neural networks (RNNs) to model token sequences. The second model is proposed is a tree structured encoder for open vocabulary semantic parse structures, augmented by subgraph features from a knowledge base.
 
 \section{Ontology Aware Recurrent Neural Networks}
 A human can process new information in a sentence, use context to resolve ambiguities, and use commonsense to make relevant generalizations.
@@ -12,7 +12,7 @@ to a dense vector of real numbers such that similar word types have similar embe
 Despite their empirical success (e.g. \cite{socher:10}) they inherently ignore the semantic ambiguity of word types (e.g., `pool' may refer to a swimming pool or the pocket billiards sport)  and do not explicitly model lexical generalizations (e.g., a swimming pool is a container).
 
 The model proposed here uses WordNet \citep{miller1995wordnet} to encode generalizations and semantic ambiguity in computational models at the lexical level.\footnote{Other resources which specify relationships between lexical items (e.g., FrameNet) may also be used.}
-WordNet groups synonymous words into synsets (i.e., concepts), with polysemous words belonging to different synsets. Synsets have multiple labeled relations among them, and in this paper, we focus on the hypernymy relation which defines a hierarchy of lexical generalizations.
+WordNet groups synonymous words into synsets (i.e., concepts), with polysemous words belonging to different synsets. Synsets have multiple labeled relations among them, and in this work, we focus on the hypernymy relation which defines a hierarchy of lexical generalizations.
 For example, the word \textit{pool} belongs to nine different synsets (e.g., swimming pool, collection of things, pocket billiards).
 \footnote{Unlike the examples listed here, the distinctions between some synsets in WordNet are very specific. For example, one of the nine synsets for \textit{pool} is defined as ``a communal combination of funds.''}
 For example, the direct hypernym of the pocket billiards sense of \textit{pool} is \textit{table game}.
@@ -156,15 +156,15 @@ Words which do not appear in WordNet are assumed to have one unique synset per w
     \centering
     \begin{tabular}{|l|c|c|c|}
     \hline
-    \textbf{Model} & \textbf{Pretrained } & \textbf{Train} & \textbf{Test}\\
+    \textbf{Model} & \textbf{GloVe} & \textbf{Train} & \textbf{Test}\\
     \hline
-    Our LSTM                        & No &  &  \\
-    $\text{OntoLSTM}_{\text{uni}}$  & No &  &  \\
-    $\text{OntoLSTM}_{\text{att}}$  & No &  &  \\ \hline
-    LSTM & Yes &   &  \\
+    Our LSTM                        & No & 90.5 & 79.7 \\
+    $\text{OntoLSTM}_{\text{uni}}$  & No & 90.6 & 81.0 \\
+    $\text{OntoLSTM}_{\text{att}}$  & No & 90.5 & 81.1 \\ \hline
+    LSTM (Bowman et al.) & Yes & 83.9 & 80.6 \\
     \hline
     \end{tabular}
-    \caption{Results on the SNLI dataset. The numbers are accuracies in percentages. Bottom row shows the results reported by \cite{bowman2016fast} using GloVe vectors to represent words.}
+    \caption{Results of OntoLSTM on the SNLI dataset}
     \label{tab:ontolstm_snli_results}
 \end{table}
 % \paragraph{Results:}
@@ -231,8 +231,22 @@ The following is an example that LSTM gets right and OntoLSTM does not:
 %\newcite{bowman2016fast} report that they have 3M parameters in their model, none for the input representations themselves.
 
 \section{Proposed Work: Augmenting Proposition Encoding using Graph Features}
-As an extension to the implemented ideas above, we propose encoding propositions guided by subgraph features from a knowledge base. Concretely, the inputs that need to be encoded are nested propositions parsed using an open-vocabulary semantic parser. The reason we use an open vocabulary
-semantic parser 
+As an extension to the implemented ideas above, we propose a model for encoding propositions guided by subgraph features from a knowledge base. Concretely, the inputs that need to be encoded are nested propositions parsed using an open-vocabulary semantic parser. In contrast to fixed schema 
+semantic parsers, the open vocabulary variants map language onto semi-formal statements with the predicates derived directly from the input language itself. This relaxation eliminates the dependency on a knowledge base and allows the parser broad coverage using distributional techniques.
+However, the produced output can no longer be executed against a knowledge base. \cite{lewis2013combining} and \cite{krishnamurthy2015learning} address this issue by separately learning execution models. Similar to the hybrid semantic parser by \cite{gardner2016open}, we propose an neural network
+encoder that composes a nested proposition following its open vocabulary semantic parse, while also injecting relevant sub-graph features from a knowledge base at each composition. Concretely, the model we propose is a knowledge backed variant of TreeLSTM \citep{tai2015improved}, that encodes
+each composition in the context of the information form a knowledge base corresponding to the nodes being composed.
+
+For example, consider the following sentence and its open vocabulary semantic parse.
+\begin{itemize}
+ \item[] \textit{Humans depend on plants for oxygen.}
+ \item[] \textit{\textbf{for}(\textbf{depend\_on}(humans, plants), oxygen)}
+\end{itemize}
+The predicates are shown in bold in the semantic parse above. We encode it using a TreeLSTM. Assuming a subset of the entities seen in the semantic parse occur in a knowledge base and are connected by paths of varying lengths, we extract them as subgraph features to inject them into the
+appropriate nodes of composition in the TreeLSTM. An illustration of this process can be seen in Figure~\ref{fig:kb_prop_tree}. The solid black lines represent the proposition tree structure, dashed arrows show the subgraph features induced from pairs of entities and the blue arrows show the
+inputs to each composition.
+
+Due to the hybrid nature of this model, it can leverage both distributional information, and also the factual information from KBs when available. We propose to use this encoder for science question answering.
 \begin{figure}
 \begin{center}
 \includegraphics[width=5in]{figures/knowledge_backed_prop_tree.png}

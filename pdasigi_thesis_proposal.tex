@@ -101,10 +101,13 @@ aspects of semantics dealing with real world information are out of their reach.
 This thesis focuses on building hybrid language understanding systems that effectively
 incorporate information from knowledge bases into deep learning models that process text.
 
-We take a generic view of NLU pipelines and identify the two main components: an input encoder and
-a task-specific predictor. Throughout this thesis, we explore various NLU tasks that require
+We take a generic view of deep learning pipelines for NLU taks and identify the two main components:
+an input encoder and a task-specific predictor. We note that augmenting the encoders with external knowledge can lead to better
+composition of input tokens, thus leading to better input representations, while the additional task specific
+knowledge can improve the reasoning capability of NLU systems. Throughout this thesis, we explore various NLU tasks that require
 different instantiations of encoders and predictors and investigate the benefits of incorporating
-external knowledge in them.
+external knowledge in them. Proposed work also includes investigating the generality of representations learned by the encoder
+by testing their transferability to other similar NLU tasks.
 
 \end{abstract}
 

@@ -235,7 +235,7 @@ As an extension to the implemented ideas above, we propose a model for encoding 
 semantic parsers, the open vocabulary variants map language onto semi-formal statements with the predicates derived directly from the input language itself. This relaxation eliminates the dependency on a knowledge base and allows the parser broad coverage using distributional techniques.
 However, the produced output can no longer be executed against a knowledge base. \cite{lewis2013combining} and \cite{krishnamurthy2015learning} address this issue by separately learning execution models. Similar to the hybrid semantic parser by \cite{gardner2016open}, we propose an neural network
 encoder that composes a nested proposition following its open vocabulary semantic parse, while also injecting relevant sub-graph features from a knowledge base at each composition. Concretely, the model we propose is a knowledge backed variant of TreeLSTM \citep{tai2015improved}, that encodes
-each composition in the context of the information form a knowledge base corresponding to the nodes being composed.
+each composition in the context of the information form a knowledge base corresponding to the nodes being composed. 
 
 For example, consider the following sentence and its open vocabulary semantic parse.
 \begin{itemize}
@@ -244,9 +244,10 @@ For example, consider the following sentence and its open vocabulary semantic pa
 \end{itemize}
 The predicates are shown in bold in the semantic parse above. We encode it using a TreeLSTM. Assuming a subset of the entities seen in the semantic parse occur in a knowledge base and are connected by paths of varying lengths, we extract them as subgraph features to inject them into the
 appropriate nodes of composition in the TreeLSTM. An illustration of this process can be seen in Figure~\ref{fig:kb_prop_tree}. The solid black lines represent the proposition tree structure, dashed arrows show the subgraph features induced from pairs of entities and the blue arrows show the
-inputs to each composition.
+inputs to each composition. 
 
-Due to the hybrid nature of this model, it can leverage both distributional information, and also the factual information from KBs when available. We propose to use this encoder for science question answering.
+Due to the hybrid nature of this model, it can leverage both distributional information, and also the factual information from KBs when available. Using an attention mechanism, the encoder weighs the relevant subgraph features appropriately. As an alternative, 
+we can use inputs from a probabilistic deductive database like Tensorlog \cite{cohen2016tensorlog}. We propose to use this encoder for science question answering.
 \begin{figure}
 \begin{center}
 \includegraphics[width=5in]{figures/knowledge_backed_prop_tree.png}

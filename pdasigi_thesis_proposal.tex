@@ -93,21 +93,32 @@ Natural Language Understanding (NLU) systems
 process human generated text (or speech) at a deep semantic level and organize
 the information in a way that is useful for downstream applications such as
 textual entailment, summarization and question answering. Recent
-advances in NLU rely heavily on representation learning or deep learning ap-
-proaches that model text meaning in context. While these methods have been
-successfully used to represent meaning of words in the context of other words,
-and thus learn complex functions of their distributional properties, the other
-aspects of semantics dealing with real world information are out of their reach.
-This thesis focuses on building hybrid language understanding systems that effectively
-incorporate information from knowledge bases into deep learning models that process text.
+advances in NLU rely heavily on representation learning or deep learning approaches
+that model text meaning in context. These approaches generally involve two main steps.
+The first is encoding, where words (or other basic linguistic units) within the input
+sentences are composed to get a unified representation per sentence. These encoded representations
+are then used in the second step as features in a classifier or a structured prediction component to produce the desired
+output. In this thesis, we identify two main weaknesses with this generic NLU pipeline, and propose address them by incorporating
+external knowledge inputs.
 
-We take a generic view of deep learning pipelines for NLU taks and identify the two main components:
-an input encoder and a task-specific predictor. We note that augmenting the encoders with external knowledge can lead to better
-composition of input tokens, thus leading to better input representations, while the additional task specific
-knowledge can improve the reasoning capability of NLU systems. Throughout this thesis, we explore various NLU tasks that require
-different instantiations of encoders and predictors and investigate the benefits of incorporating
-external knowledge in them. Proposed work also includes investigating the generality of representations learned by the encoder
-by testing their transferability to other similar NLU tasks.
+Firstly, while distributional methods for 
+encoding inputs have been successfully used to represent meaning of words in the context of other words,
+and thus learn complex functions of their distributional properties, there are other
+aspects of semantics that are out of their reach. These aspects are related to
+commonsense or real world information which is part of shared human knowledge but is not explicitly
+present in input. We address this issue using knowledge-aware encoders that produce representations grounded in
+knowledge bases like WordNet and Freebase. 
+
+Secondly, many NLU tasks require additional contextual information beyond a single sentence. Examples of such tasks
+include machine comprehension, where the system is required to read a paragraph and answer questions about it. These tasks
+require models that can perform inference over long-term memory. Recent progress in memory networks addresses this requirement
+to some extent. However, the memory network models published so far have been shown to be capable of only shallow reasoning. We apply
+these models to the task of answering non-factoid questions from science text books, and our initial results show that there is a lot of room
+for improvement. We identify the difficulty of the the problem and propose some solutions to improve these models.
+
+Finally, we propose to investigate the transferability of learned representations from one NLU task to another. Concretely, our experiments
+will answer whether similar NLU tasks can be modeled jointly, whether decreasing the complexity of the encoders makes 
+them overfit less to the task they are trained on and make them more transferable, and what role external knowledge plays in transfer learning.
 
 \end{abstract}
 

@@ -90,6 +90,16 @@ The goal of this thesis is to find the limitations of various knowledge sources 
 to build hybrid NLU systems that can successfully incorporate real world knowledge in deep learning models. We now describe how this thesis is organized.
 
 \section{Thesis Outline}
+\begin{figure}
+\begin{center}
+\includegraphics[width=6in]{figures/thesis_overview.png}
+\caption{Generic NLU pipeline and thesis overview}
+\label{fig:thesis_overview}
+\end{center}
+\end{figure}
+Figure~\ref{fig:thesis_overview} shows the generic pipeline described so far, along with the breakdown of the chapters related to each component
+of the pipeline.
+
 In Chapter~\ref{chapter:ontolstm}, we describe a method to incorporate selectional 
 preferences in algorithms that encode sentences. This involves a variant of Long Short-Term
 Memory (LSTM) based Recurrent Neural Networks (RNN) that use information
@@ -105,7 +115,8 @@ produced by OntoLSTM are better than those produced by LSTMs when used with iden
 components for predicting textual entailment. We also visualize the attention scores assigned to the hypernyms 
 of words in the premises and hypotheses and show that OntoLSTM is indeed learning useful generalizations of words
 that help the learned representations perform better at textual entailment. Proposed work in this chapter is an extension
-of the OntoLSTM idea to tree structured encoders that are augmented with 
+of the OntoLSTM idea to tree structured encoders that are augmented with subgraph features from a knowledge base. We propose 
+to use them to encode open vocabulary semantic parses augmented with information from Freebase.
 
 In Chapter~\ref{chapter:memnet_qa} we describe a generalized deep learning architecture for knowledge guided reasoning.
 The pipeline follows the generic specification in Section~\ref{sec:intro_external_knowledge} and has configurable components
@@ -114,16 +125,21 @@ and the attentive reader model from \cite{hermann2015teaching} are specific inst
 Unlike prior work that evaluated these models on selecting answers from background text, we evaluate our model on answering science questions, 
 a task that requires deeper reasoning and entailment in the context of background knowledge.
 
-Chapter~\ref{chapter:proposed_work} contains proposed work. Firstly, as an extension to the idea of knowledge augmented encoding, 
-we propose incorporating probabilistic logic into our generic NLU pipeline. Particularly, we propose using TensorLog \cite{cohen2016tensorlog},
-a differentiable deductive database as an additional input to encoders that recursively compose propositions in logical forms. Secondly, we propose methods to effectively evaluate NLU systems
-and the role of external knowledge in them. In addition to evaluating the prediction accuracy, we propose to evaluate the encoding capability of the model by 
-generating sentences in the input space using Encoder-Decoder models. To test the role of external knowledge, we will explore the limits of purely distributional models
-and study the kinds of information that cannot be modeled by them. A candidate problem for this
-exercise is semantic anomaly detection, which involves automatically 
-identifying real world commonsense violations in text. We shall describe an annotation
-effort that resulted in newswire headlines manually labeled with the degree
+In Chapter~\ref{chapter:other_tasks} we introduce two non-standard NLU tasks.
+The first is anomaly detection in newswire events, a problem that requires understanding events.
+We describe an annotation effort that resulted in newswire headlines manually labeled with the degree
 of surprise associated with them. The task is to build a model that can identify the highly
 surprising headlines as anomalies. This is different from the usual Language Modeling (LM) problem
 because even the semantic anomalies are well-formed sentences that can be well-understood. Consequently,
-the model needs to discriminate between sentences at a semantic level deeper than surface fluency.
+the model needs to discriminate between sentences at a semantic level deeper than surface fluency. The second task is
+understanding experiment narratives in research papers. Given clauses from a experiment narrative identified as facts, methods,
+results, goals and hypotheses, the task is to identify whether the final implications made from the experiment are valid. For this task,
+we introduce a dataset of experiments from biomedical research papers annotated by domain experts. This task is similar to the question answering 
+task described in Chapter~\ref{chapter:memnet_qa}, except that each element in the background knowledge used for reasoning has a specific discourse function.
+
+Finally, in Chapter~\ref{chapter:transfer_learning}, we propose to investigate the transferability of the representations learned for one NLU task to other tasks.
+Transfer Learning in neural networks has been well-studied in vision related tasks, and it has been established that the features learned for one task can be
+used to improve the performance of similar architectures in other tasks. Within the scope of NLU, this is a feasible investigation given that similarity
+among the neural network architectures used for various tasks. It is an important investigation because not all tasks come with lots of training data, owing to factors
+such as difficulty in getting reliable annotations and subjectivity. Moreover, with the current trend of increasing model complexity to perform better at any given task,
+it is becoming increasingly important to ensure that the models do not overfit any given dataset.

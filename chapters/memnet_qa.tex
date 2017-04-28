@@ -9,28 +9,7 @@ proposed a end-to-end variant (MemN2N) where the memory selection component is
 trained jointly with the rest of the network. These were previously used for
 answering questions that require reasoning over multiple background sentences,
 both in simulated \citep{bordes2010towards} and large-scale
-\citep{fader2013paraphrase} scenarios. In this work, we apply MemN2N to the task
-of answering science questions. This dataset is significantly different from the
-QA datasets previously used to test memory networks, and requires more complex
-reasoning. One example of such question is shown below.
-%TODO(pradeep): Make this a table?
-\begin{itemize}
-\item \textit{Astronauts weigh more on Earth than they do on the moon because \\
-(A) they have less mass on the moon (B) their density decreases on the moon (C)
-the moon has less gravity than Earth (D) the moon has less friction than Earth}
-\end{itemize}
-%TODO(pradeep): Say more things about the nature of the problem.
-In this chapter, we take a generic view of MemN2N as shown in
-Figure~\ref{fig:memnet} and identify five configurable components in it:
-\textit{query encoder}, \textit{background encoder}, \textit{memory selector},
-\textit{memory updater} and an \textit{answer prediction} module, all
-implementing appropriate functions. We experiment with various configurations of
-these components and show results on the science QA dataset. It has to be noted
-that given good representations of the question, candidate answers and
-background information, QA can be seen as a textual entailment problem.
-\citep{bowman2015large}.
-
-\section{Memory Network Setup}
+\citep{fader2013paraphrase} scenarios.
 \begin{figure*}
 \begin{center}
   \includegraphics[width=6.5in]{figures/memory_network_generic.png}
@@ -77,6 +56,34 @@ the indices in the input. $W \in \mathbb{R}^{V \times d}$ is a parameter of the
 answer prediction function, causing the softmax to be over the vocabulary size
 $V$. Note that in MemN2N, $u^0$ is not an argument of \texttt{PredictAnswer}.
 
+In this chapter, we propose to apply memory networks to two different tasks:
+answering science questions and understanding experiment narratives in research papers. 
+
+\section{Memory Networks for Science Question Answering}
+The ScienceQA dataset we use here is significantly different from the
+QA datasets previously used to test memory networks, and requires more complex
+reasoning. One example of such question is shown below.
+%TODO(pradeep): Make this a table?
+\begin{itemize}
+\item Astronauts weigh more on Earth than they do on the moon because
+\begin{enumerate}[(a)]
+ \item they have less mass on the moon
+ \item their density decreases on the moon
+ \item the moon has less gravity than Earth
+ \item the moon has less friction than Earth
+\end{enumerate}
+\end{itemize}
+%TODO(pradeep): Say more things about the nature of the problem.
+In this chapter, we take a generic view of MemN2N as shown in
+Figure~\ref{fig:memnet} and identify five configurable components in it:
+\textit{query encoder}, \textit{background encoder}, \textit{memory selector},
+\textit{memory updater} and an \textit{answer prediction} module, all
+implementing appropriate functions. We experiment with various configurations of
+these components and show results on the science QA dataset. It has to be noted
+that given good representations of the question, candidate answers and
+background information, QA can be seen as a textual entailment problem.
+\citep{bowman2015large}.
+
 \paragraph{Science Question Answering as Textual Entailment} In our setup, we
 transform the problem of answering science questions into a textual entailment
 problem. That is, given a multiple choice question with answer options, we
@@ -85,26 +92,19 @@ statement, and check whether the statement can be entailed from relevant
 background information. Given this setup, the \texttt{PredictAnswer} function
 essentially becomes an entailment function.
 
-\section{Preliminary Results}
-We now show some preliminary results of our memory network implementation on science question answering with the following change in configuration configuration:
+\subsection{Preliminary Results}
+We now show some preliminary results of our memory network implementation on science question answering using MemN2N architecture with following change in configuration:
 \begin{flalign*}
 &\texttt{PredictAnswer}(u_0, s^H) = \texttt{HeuristicMatch}(u_0, s_h)
 \end{flalign*}
 where \texttt{HeuristicMatch}(.) is the heuristic matching function proposed by \cite{mou2015recognizing} for textual entailment, also used for our experiments with SNLI data in 
-Chapter~\ref{chapter:ontolstm}. The dataset used for these experiments is questions collected from 4th and 8th grade science text books which look like the following.
-\begin{itemize}
- \item[] The length of daylight changes as the seasons change during the year. What causes these changes in daylight?
- \begin{enumerate}[(a)]
-  \item Earth's tilt on its axis
-  \item Sun's tilt on its axis
-  \item Earth spinning on its axis
-  \item Sun spinning on its axis
- \end{enumerate}
-\end{itemize}
-We built a Lucene index over a big collection of sentences related to general science from various sources and extracted relevant background sentences for each question by querying it. For each of the
+Chapter~\ref{chapter:ontolstm}. The dataset used for these experiments is questions collected from 4th and 8th grade science text books.
+Context for each question was obtained as follows. We built a Lucene index over a big collection of sentences related to general science from various sources and extracted relevant background sentences for each question by querying it. For each of the
 options, we query the Lucene index with a combination of the option text and the question. We thus transform questions like the one shown above into four entailment problems where the combination of the
 question and one of the options is the hypothesis and the relevant background sentences are the premises. The final answer is picked by selecting the option (combined with the question) that has the highest
-entailment score. This is done by passing the final entailment scores through a softmax layer. Preliminary results using our model are shown in Table~\ref{tab:memnet_qa_results}, using two different encoders
+entailment score. This is done by passing the final entailment scores through a softmax layer.
+
+Preliminary results using our model are shown in Table~\ref{tab:memnet_qa_results}, using two different encoders
 to encode the input sentences and background. We also show the accuracy of a baseline system based on Lucene, that selects for every question, the option that results in the highest relevance score in the process
 described above for retrieving background sentences. It can be seen that the simple baseline does better than the memory network model.
 
@@ -114,8 +114,8 @@ described above for retrieving background sentences. It can be seen that the sim
     \hline
     \textbf{Encoder} & \textbf{Test Acc.}\\
     \hline
-    BOW & 38.7\% \\
-    GRU & 32.9\% \\
+    BOW & \% \\
+    GRU & 38.8\% \\
     \hline
     \hline
     \textbf{Lucene baseline} & 41.1\% \\
@@ -125,7 +125,81 @@ described above for retrieving background sentences. It can be seen that the sim
     \label{tab:memnet_qa_results}
 \end{table}
 
-
 \subsection{Analysis}
 
-\section{Proposed Work}
+\subsection{Proposed Work}
+
+
+\section{Memory Networks for Understanding Experiments}
+\subsection{Discourse Structure of Experiments}
+An important part of science is communicating results. There are well established rhetorical guidelines 
+\cite{michael1996craft} for scientific writing that are used across disciplines and consequently, narratives describing
+evidence within a scientific investigation are expected to have a certain structure. Typically, the description begins with certain background 
+information which has already been proved, 
+followed by some motivating hypotheses to introduce the experiment, the methods, followed by results, and finally
+inferences made based on those results. Understanding this structure is important since it enables the 
+higher-level construction of the general argument of the paper. The reader assembles the pieces in order to
+understand what was done, why it was done, what prior knowledge it builds upon and/or refutes, and with what 
+certainty the final conclusions should be accepted. Without such an overall model of the experiment, 
+the reader has nothing but basic assertions. Identifying the structure of experiments provides
+additional context information that can help various downstream tasks. For event
+co-reference, 
+one can use the structure to accurately resolve anaphora links. For example, a
+reference made in an \textit{implication} statement is likely to some entity in
+a \textit{result} 
+statement it follows. It has to be noted that the taxonomy also provides
+epistemic information which is helpful in information extraction (IE): IE
+systems need not process
+clauses labeled as \textit{hypothesis} or \textit{goal} since they do not
+contain events that actually occurred.
+\begin{table}
+\begin{center}
+  \begin{tabular}[c]{|c|l|}
+ \hline
+  \textbf{Type} & \textbf{Definition} \\
+  \hline
+  Goal & Research goal \\
+  \hline
+  Fact & A known fact, a statement taken to be true by the author \\
+  \hline
+  Result & The outcome of an experiment \\
+  \hline
+  Hypothesis & A claim proposed by the author \\
+  \hline
+  Method & Experimental method \\
+  \hline
+  Problem & An unresolved or contradictory issue \\
+  \hline
+  Implication & An interpretation of the results \\
+  \hline
+  \end{tabular}
+\end{center}
+ \caption{Seven label experiment discourse taxonomy from \protect\cite{de2012verb}}
+ \label{table:taxonomy}
+\end{table}
+
+In this work, our aim is to identify these
+discourse elements given an experiment narrative. There exist several proposals for experiment 
+discourse models \cite{liakata2010zones,nawaz2010evaluating,mizuta2004annotation,nwogu1997medical}. 
+We adopt the discourse type
+taxonomy 
+for biological papers suggested by \cite{de2012verb}, and define our problem
+as identifying the discourse type of each clause in a given experiment
+description.
+The taxonomy contains seven types shown in Table~\ref{table:taxonomy}.
+Figure~\ref{fig:example_parse} shows an example of a paragraph from a
+paper\footnote{\textit{Protein tyrosine phosphatase-PEST 
+regulates focal adhesion disassembly, migration, and cytokinesis in
+fibroblasts}. Angers-Loustau et al., The Journal of Cell Biology, 1999} broken
+down into clauses and
+tagged with discourse types.
+\begin{figure}
+  \begin{center}
+  \includegraphics[width=5in]{figures/example_text.png}
+  \caption{Example of an experiment description tagged with discourse types.}
+  \label{fig:example_parse}
+  \end{center}
+ \end{figure}
+
+\subsection{Data}
+\subsection{Proposed Work}

@@ -1,0 +1,32 @@
+\section{Summary}
+In this thesis we propose to augment deep learning systems for NLU with external knowledge inputs. We identify two broad kinds of knowledge: \textit{background} and \textit{contextual}.
+
+We defined background knowledge as the implicit shared human knowledge that is often omitted in human generated text or speech. Our proposal to incorporate this kind of knowledge in NLU systems is by linking text to structured knowledge bases like
+WordNet, Freebase and ConceptNet, and consequently modify the encoder to process this additional information. In Chapter~\ref{chapter:ontolstm}, we shouwed the advantages of linking words to WordNet subgraphs, and how it helps textual entailment and 
+prepositional phrase attachment tasks. By giving the encoder, access to the hypernym paths of relevant concepts we showed that we can learn useful task-dependent generalizations using an attention mechanism. We propose to use similar disambiguation
+techniques to learn better representations of nested proposition structures by linking the nodes of a TreeLSTM to subgraph structures from Freebase, and better event representations by linking semantic role labeled structures with commonsense information from ConceptNet.
+
+We defined contextual knowledge as the explicit additional information that reading comprehension systems need to reason over, during prediction. We identified that many reading comprehension tasks require modeling complex entailment,
+which is beyond the capability of currently published memory networks. Our proposal in Chapter~\ref{chapter:memnet_qa} includes modifying the prediction component of memory networks to make the applicable to science question answering and modeling experiment narratives.
+
+\section{Timeline}
+\begin{itemize}
+    \item Ontology Aware Recurrent Neural Networks: Done
+    \begin{itemize}
+        \item Target: ACL 2017
+    \end{itemize}
+    \item Complex entailment in memory networks for Science QA: Nov 2016 -- Feb 2017
+    \begin{itemize}
+        \item Target: ACL 2017
+    \end{itemize}
+    \item KB TreeLSTM for question answering: Feb 2017 -- May 2017
+    \begin{itemize}
+        \item Target: NIPS 2017 or EMNLP 2017
+    \end{itemize}
+    \item Improved event understanding with ConceptNet: May 2017 -- August 2017
+    \item Transfer Learning with background knowledge: August 2017 -- November 2017
+    \begin{itemize}
+        \item Target: ICLR 2018
+    \end{itemize}
+    \item Thesis writing and defense: Spring 2018
+\end{itemize}

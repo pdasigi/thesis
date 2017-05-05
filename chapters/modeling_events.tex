@@ -1,31 +1,33 @@
-In this chapter, we propose two new tasks to evaluate our knowledge-aware NLU pipeline. The first task is semantic anomaly detection in newswire headlines.
-
 \section{Understanding Events}
-Understanding events is a fundamental prerequisite for deeper semantic 
-analysis of language.  We introduce the problem of automatic anomalous event
-detection
-in this chapter and propose a novel event model that can learn to differentiate
-between normal
-and anomalous events.  We generally define anomalous events as those that are
-unusual compared
-to the general state of affairs and might invoke surprise when reported.  For
-example, given the 
-following event mention 
+Events are fundamental linguistic elements in human speech. Thus understanding 
+events is a fundamental prerequisite for deeper semantic 
+analysis of language, and any computational system of human language should
+have a model of events. One can view an event as an occurrence of a certain 
+action caused
+by an agent, affecting a patient at a certain time and place and so on. It is 
+the combination of the entities
+filling the said roles that define an event. Furthermore, certain combinations 
+of these role fillers
+agree with the general state of the world, and others do not. For example, 
+consider the events described by the following
+sentences.
 \begin{itemize}
- \item[] \textit{Many of them blessed themselves by an endless cycle of bombings
-and  shootings and massacres.}
+ \item[] \textit{Man recovering after being bitten by his dog.}
+ \item[] \textit{Man recovering after being shot by cops.}
 \end{itemize}
-one might think it is strange because \textit{them} refers to people, people
-usually do not \textit{bless themselves} by \textit{bombings and
-shootings 
-and massacres}, let alone an \textit{endless cycle} of them.  But the mentions
+The \textit{agent} of the \textit{biting} action is \textit{dog} in the first 
+sentence, and that of the \textit{shooting}
+action in the second sentence is \textit{cops}. The patient in both sentences is 
+\textit{man}.
+Both combinations of role-fillers result in events that agree with most people's 
+world view. That is not the case with
+the event in the following sentence.
 \begin{itemize}
- \item[] \textit{Many of them blessed themselves by regular visits to the
-church.}
- \item[] \textit{Many of them caused large scale destruction by an endless cycle
-of bombings and shootings and massacres.}
+ \item[] \textit{Man recovering after being shot by his dog.}
 \end{itemize}
-are not as unusual as the previous one.  While all three sentences are equally
+This combination does not agree with our expectations about the general state of 
+affairs, and consequently one
+might find this event strange. While all three sentences above are equally
 valid syntactically, it 
 is our knowledge about the role fillers 
 ---both individually and specifically in combination---  
@@ -34,7 +36,13 @@ differentiate between normal and anomalous events.  Hence we hypothesize that
 \emph{anomaly is a result of unexpected or 
 unusual combination of semantic role fillers}.
 
-Given this idea, an automatic
+In this chapter, we introduce the problem of automatic anomalous event
+detection and propose a novel event model that can learn to differentiate
+between normal
+and anomalous events. We generally define anomalous events as those that are
+unusual compared
+to the general state of affairs and might invoke surprise when reported. An 
+automatic
 anomaly detection algorithm has to encode
 the goodness of semantic role filler coherence.  This is a hard problem since
 determining what a good combination of role fillers is 
@@ -42,14 +50,107 @@ requires deep semantic and pragmatic knowledge.
 Moreover, manual judgment of anomaly itself may be difficult and people often
 may not agree with each other in this
 regard.  We describe the difficulty in human judgment in greater detail in
-Section~\ref{sec:annot}.  
+Section~\ref{sec:nem_annot}.  
 Automatic detection of anomaly requires encoding complex information, which
 poses the challenge of sparsity
 due to the discrete representations of meaning, that are words.  These problems
 range from polysemy and synonymy at the 
 lexical semantic level to entity and event coreference at the discourse level.
 
-\subsection{Data}
+We define an event as the pair $(V, \textbf{A})$, where $V$
+is the predicate or a semantic verb\footnote{By semantic verb, we mean an action 
+word whose
+syntactic category is not necessarily a verb.  
+For example, in \textit{Terrorist attacks on the World Trade Center..},
+\textit{attacks} is not a verb but is still an 
+action word.}, and $\textbf{A}$ is the set of its semantic arguments like agent,
+patient, time, location, so on. Our aim
+is to obtain a vector representation of the event that is composed from
+representations of individual words, while explicitly guided by the semantic
+role structure. This representation can be understood as an embedding of the
+event in an event space. 
+
+\section{Linguistic Background} \label{sec:nem_background}
+Selectional preference, a notion introduced by \cite{wilks1973preference}, 
+refers to the paradigm of modeling semantics of
+natural language in terms of the restrictions a verb places on its arguments. 
+For example, the knowledge required to identify
+one of the following sentences as meaningless can be encoded as preferences (or 
+restrictions) of the verb.
+\begin{itemize}
+ \item[] \textit{Man eats pasta.}
+ \item[] \textit{Poetry eats computers.}
+\end{itemize}
+The restrictions include \textit{eat} requiring its subject to be animate, its 
+object to be edible, and so on. Though the
+notion was originally proposed for a verb and its dependents in the context of 
+dependency grammars, it is equally applicable to
+other kinds of semantic relations. In this work,
+we use this idea in the context of verbs and their semantic role fillers.
+
+The idea is that identifying the right sense of the word can be guided by the 
+preferences of the other words it is related to.  \cite{resnik1997selectional}
+illustrates this through the example of disambiguating the sense of the word 
+\textit{letter} in the phrase \textit{write a letter}.
+While \textit{letter} has multiple senses, as an object, the verb \textit{write} 
+``prefers'' the sense closer to \textit{reading matter} more than others.
+At the phrasal level, selectional preferences are useful in encoding complex 
+phenomena like metaphor.  Metaphorical usage of words usually involves violating 
+selectional restrictions.
+For example the phrase \textit{kill an idea} is a metaphor, because 
+\textit{kill} does not usually take abstract concepts as objects.  The phrase 
+itself is common and
+one can easily attribute a metaphorical sense to the verb kill and resolve the 
+violation.  \cite{wilks2007making}, \cite{wilks2007preferential}, 
+\cite{krishnakumaran2007hunting},
+\cite{shutova2013statistical}, among others discuss the selectional preference 
+view of metaphor identification.
+Automatic acquisition of selectional preferences from text is a well studied 
+problem.  \cite{resnik1996selectional} proposed the first broad coverage 
+computational model of selectional preferences.  The approach is based on using 
+WordNet's hierarchy to generalize across words.
+It measures selectional association strength of an triple $(v, r, c)$ with verb 
+$v$, relation $r$ and an argument class $c$ as the Kullback-Leibler divergence 
+between the the distributions $P(c|v, r)$  $c$
+and $P(c|r)$ normalized over all classes of arguments that occur with the $(v, 
+r)$ pair.  \cite{abe1996learning} also use WordNet, and model selectional 
+preferences by minimizing the length tree cut through
+the noun hierarchy.  \cite{ciaramita2000explaining} encode the hierarchy as a 
+Bayesian network and learn selectional preferences using probabilistic graphical 
+methods.
+\cite{rooth1999inducing} take a distributional approach, and use latent variable 
+models to induce classes of noun-verb pairs, and thus learn their preferences.  
+Methods by \cite{erk2007simple,erk2010flexible}
+are also distributional, and have been described earlier in this paper.  
+\cite{seaghdha2010latent} proposed the use of Latent Dirichlet Allocation (LDA), 
+to model preferences as topics.  \cite{van2009non} used
+non-negative tensor factorization, and modeled subject-verb-object triples as a 
+three-way tensor.  The tensor is populated with co-occurrence frequencies, and 
+the selectional preferences are measured from decomposed
+representations of the three words in the triple. \cite{van2014neural} trains 
+neural networks to score felicitous triples higher than infelicitous ones.
+
+\cite{erk2010flexible} also model selectional preferences using vector spaces.  
+They measure the 
+goodness of the fit of a noun with a verb in terms of the similarity between the 
+vector of the noun and 
+some ``exemplar'' nouns taken by the verb in the same argument role.  
+\cite{baroni2010distributional} 
+also measure selectional preference similarly, but instead of exemplar nouns, 
+they calculate a 
+prototype vector for that role based on the vectors of the most common nouns 
+occurring in that 
+role for the given verb.  \cite{lenci2011composing} builds on this work and 
+models the phenomenon
+that the expectations of the verb or its role-fillers change dynamically given 
+other role fillers.
+
+% \section{Machine Learning Background} \label{sec:nem_neural_networks}
+% Our model uses Recurrent Neural Networks (RNN) with Long Short-Term Memory (LSTM)
+% \citep{hochreiter1997long} cells. We describe the relevant technical details here.
+% RNNs, as opposed to feed-forward neural networks are networks with loops in them
+
+\section{Data}
 We crawl 3684 ``weird news'' headlines available publicly 
 on the website of NBC
 news\footnote{\url{
@@ -69,10 +170,12 @@ headlines in the AFE section of Gigaword, called Gigaword Events (GWE)
 henceforth.  We assume these events are normal.
 To use as positive examples for training event composition, we sample roughly
 the same number of events from 
-GWE as our negative examples from NWE. From the two sets, we uniformly sample 1003 events
+GWE as our negative examples from NWE. From the two sets, we uniformly sample 
+1003 events
 as the test set and validate the labels by getting crowd-sourced annotations.
 
 \subsection{Annotation}
+\label{sec:nem_annot}
 We post the annotation of the test set containing 1003 events as
 Human Intelligence Tasks (HIT) on Amazon Mechanical Turk (AMT).
 We break the task into 20 HITs and ask the workers to select one of the 
@@ -81,7 +184,8 @@ four options - \textit{highly unusual}, \textit{strange}, \textit{normal} and
 unusual} when the 
 event seems too strange to be true, \textit{strange} if it seems unusual but 
 still plausible, and \textit{cannot say} only if the information present in the 
-event is not sufficient to make a decision.  We publicly release this set of 1003
+event is not sufficient to make a decision.  We publicly release this set of 
+1003
 annotated events for evaluating future research.
 
 \begin{table}
@@ -139,141 +243,174 @@ unusual}.  It has to be noted that even though our test set
 has equal size samples from both NWE and GWE, the true distribution is not
 uniform.
 
-\subsection{Model for Semantic Anomaly Detection}
-We now describe our Neural Event Model (NEM) for encoding events. Events encoded using this model are then passed to a multi-layer perceptron
-for making the anomaly decision. We define an event as the pair $(V, \textbf{A})$, where $V$
-is a semantic verb\footnote{By semantic verb, we mean an action word whose
-syntactic category is not necessarily a verb.  
-For example, in \textit{Terrorist attacks on the World Trade Center..},
-\textit{attacks} is not a verb but is still an 
-action word.}, and $\textbf{A}$ is the set of its semantic arguments like agent,
-patient, time, location, so on. Our aim
-is to obtain a vector representation of the event that is composed from
-representations of individual words, while explicitly guided by the semantic
-role structure.
-This representation can be understood as an embedding of the
-event
-in an event space.  
+\subsection{Language Model Separability}
+Given the annotations, we test to see if the
+sentences corresponding to anomalous events can be separated from normal events 
+by simpler 
+features.  We build a n-gram language model from the training data set used for 
+argument composition and 
+measure the perplexity of the sentences in the test set.  
+Figure~\ref{fig:nem_lm_ppl} shows
+a comparison of the perplexity scores for different labels. If the n-gram 
+features are enough 
+to separate different classes of sentences, one would expect the sentences 
+corresponding to 
+\textit{strange} and \textit{highly unusual} labels to have higher perplexity 
+ranges than \textit{normal}
+sentences, because the language model is built from a dataset that is expected 
+to have a distribution of
+sentences where majority of them contain normal events.  As it can be seen in 
+Figure~\ref{fig:nem_lm_ppl}, 
+except for a few outliers, most data points in all the categories are in similar 
+perplexity ranges.
+Hence, sentences with different labels cannot be separated based on an n-gram 
+language model features.
 
-\subsubsection{Encoder}
-Neural Event Model (NEM) is a kind of RNN
-that is guided by a tree representation of events like the one shown in
-Figure~\ref{fig:nem_event_tree}.  The edges 
-connected to the root of the tree correspond to the verb and its semantic roles
-(arguments).  All the other edges form binary sub-trees of arguments.  
 \begin{figure}
   \begin{center}
-  \includegraphics[width=4in]{figures/event_tree.png}
-  \caption{Example of an event tree}
-  \label{fig:nem_event_tree}
+  \includegraphics[width=4in]{figures/perplexity-comparison.png}
+  \caption{Comparison of perplexity scores for different labels}
+  \label{fig:nem_lm_ppl}
   \end{center}
- \end{figure}
-NEM is a supervised model that learns to differentiate between anomalous and
-normal events by 
-classifying the event embeddings.  
-The inputs to NEM are the semantic arguments, and the representations of words
-in 
-each argument.  We recursively compose the words in each argument to obtain
-argument level
-representations, which are then composed to obtain an event embedding. 
+\end{figure}
 
-Intra-argument composition 
-(called argument composition henceforth) is unsupervised, and we use contrastive
-estimation 
-to learn the parameters.  The structure of the binary tree backing
-argument composition is determined dynamically, composing at each stage the two
-nodes
-which give the best composition score.  Inter-argument 
-composition (called event composition henceforth) is supervised
-and we use label error to learn the parameters.  Figure~\ref{fig:nem}
-shows how NEM encodes the event shown in Figure~\ref{fig:nem_event_tree}.  The blue
-boxes show argument composition 
-and the red box shows event composition.  
+\section{Model for Semantic Anomaly Detection}
+Neural Event Model (NEM) is a supervised model that learns to differentiate between anomalous and
+normal events by 
+classifying the event embeddings. We treat the problem as a binary classification problem, with
+\textit{normal} and \textit{anomalous} being the two classes.
+The event embeddings are computed using a structured composition model
+that represents an event as the composition of the five slot-fillers: \textbf{action},
+\textbf{agent}, \textbf{patient}, \textbf{time} and \textbf{location}.
+Figure~\ref{fig:nem} shows the pipeline for anomalous event detection using NEM. We
+first identify the fillers for the five slots mentioned above, by running a Semantic Role Labeler (SRL).
+This structured input is then passed to NEM. The model has three components:
+
+\paragraph{Argument Composition} This component encodes all the role fillers as vectors in the same space.
+This is accomplished by embedding the words in each role filler, and then passing them through a Recurrent
+Neural Network (RNN) with Long Short-Term Memory (LSTM) \citep{hochreiter1997long} cells. Note that the same LSTM is
+used for all the slots. Concretely,
+\begin{equation}
+ a_s = \text{LSTM}(I_s)
+\end{equation}
+where $I_s$ denotes the ordered set of word vector representations in in the filler of slot $s$, and
+$a_s$ represents the vector representation of that slot filler.
+
+\paragraph{Event Composition} The slot filler representations are then composed using slot specific
+projection weights to obtain a single event representation. Concretely,
+\begin{align}
+ \bar{a}_s &= tanh(W_s^\intercal a_s + b_s) \quad \text{where } s \in \{c,g,p,t,l\} \\
+ e &=  \bar{a}_c + \bar{a}_g + \bar{a}_p + \bar{a}_t + \bar{a}_l 
+\end{align}
+$W_s \in \mathbb{R}^{d \times d}$ and $b_s \in \mathbb{R}^{d}$ are slot specific projection weights and biases respectively, with $s$ denoting one of a\underline{c}tion,
+a\underline{g}ent, \underline{p}atient, \underline{t}ime and \underline{l}ocation. $d$ is the dimensionality of the word embeddings.
+Event composition involves performing non-linear projections of all slot-filler representations, and finally obtaining an event representation
+$e$.
+
+\paragraph{Anomaly Classification} The event representation is finally passed through a softmax layer to obtain
+the predicted probabilities for the two classes.
+\begin{align}
+ p_e & = \text{softmax}(W_e^\intercal e + b_e) \\
+\end{align}
+$W_e \in \mathbb{R}^{d \times 2}$ and $b_e \in \mathbb{R}^2$ are the weight and bias values of the softmax layer respectively.
+As it can be seen, the layer projects the event representation into a two-dimensional space before applying the softmax non-linearity.
+
 \begin{figure}
   \begin{center}
-  \includegraphics[width=4in]{figures/nem2.png}
-  \caption{Neural Event Model: Encoding}
+  \includegraphics[width=6.5in]{figures/nem_pipeline.png}
+  \caption{Anomaly Classification Pipeline with Neural Event Model}
   \label{fig:nem}
   \end{center}
 \end{figure}
-\subsection{Training}
-NEM is trained in two phases.  The first, argument composition is unsupervised 
-while the second, event composition is supervised.
-\paragraph{Argument Composition}
-An argument composition node takes inputs of dimensionality $2n$ and produces an
-composed output representation
-of dimensionality $n$ and a composition score.  Accordingly, we define the node
-in terms of the parameters $\theta_{arg} = \{W_{arg} \in \mathbb{R}^{n \times 2n}; b_{arg}, S_{arg} \in
-\mathbb{R}^{n \times 1}; V\}$
-where $W_{arg}$, $b_{arg}$ and $S_{arg}$ are the composition weight, bias and
-the scoring operators respectively 
-as described previously, and $V$ is the set of representations of all the words
-in the vocabulary.  
-All nodes performing argument composition use the same parameters.  Training is
-done in contrastive estimation fashion
-and the objective is 
-\begin{equation*}
- \argmin_{\theta_{arg}} J_{arg} = \argmin_{\theta_{arg}} max(0, 1-s+s_c)
-\end{equation*}
-where $s$ is the score of the composition of the entire argument produced by 
-the root node of the argument, and $s_c$ is the score produced by randomly
-replacing one of the words in the argument at a time. 
-\paragraph{Event Composition}
-Event composition takes argument representations and produces the event
-representation and label indicating whether the event is
-normal or anomalous.  We define the event composition node in terms of the
-parameters $\theta_{event} = \{W_{event} \in \mathbb{R}^{n \times kn}; b_{event},
-L_{event} \in \mathbb{R}^{n \times 1}\}$
-where $k$ is the number of semantic arguments per event.  $L_{event}$ is the
-label operator.  The objective of this
-phase is 
-\begin{align*}
-\begin{aligned}
-\argmin_{\theta_{event}} J_{event} = \argmin_{\theta_{event}} \left( - l \log h(e) + (1-l) \log (1 - h(e)) \right)
-\end{aligned}
-\end{align*}
-where $l$ is the reference binary label indicating whether the event is normal or
-anomalous, $e$ is the event representation and
-$h(e)$ is the output of the logistic function.  Concretely,
-\begin{equation*}
- h(e) = \frac{1}{1+e^{-L_{event}^\intercal e}}
-\end{equation*}
-We implement the functions and perform stochastic gradient descent using Theano
-\cite{bergstra2010theano}.
 
-\subsection{Results}
-We evaluate the performance of event composition by comparing the predicted
-labels from the classifier against the ones given by MACE.
-We merge the two anomaly classes and calculate accuracy of the binary
-classifier, and the precision and recall of anomaly detection.
+\subsection{Training}
+Given the output from NEM, we define
+\begin{align}
+ p^1_e &= P(\text{anomalous} | e) \\
+ p^1_e &= P(\text{normal} | e)
+\end{align}
+and compute the label loss based on the prediction at the end of anomaly classification as a cross entropy loss as follows:
+\begin{align}
+J &= \left( - l \log p^1_e + (1-l) \log p^0_e \right)
+\end{align}
+where $l$ is the reference binary label indicating whether the event is normal or
+anomalous. The three components of the model described above: argument composition, event composition and anomaly classification are all trained jointly.
+That is, we optimize the following objective.
+\begin{equation}
+ \argmin_{\theta} J
+\end{equation}
+where $\theta$ includes all $W_s$ and $b_s$ from all the slots, $W_e$ and $b_e$ from event composition and also all the LSTM parameters from argument composition.
+We optimize this objective using ADAM \citep{kingma2014adam}. 
+
+\section{Results}
+We merged the two anomaly classes (strange and highly unusual) and calculated accuracy and F-score (for the anomaly class) of the binary
+classifier\footnote{Note that the model described here is an extension of the one proposed by..}. For the sake of comparison, we also define the following two baseline models.
+
+\paragraph{PMI Baseline} We compare the performance of our model against a baseline that is based
+on how well the semantic arguments in the event match the selectional preferences 
+of the predicate.  We measure selectional preference using Point-wise Mutual Information
+(PMI) \cite{church1990word} of the head words of each semantic argument with the predicate.  
+The baseline model is built as follows.  We perform dependency parsing using MaltParser
+\cite{nivre2007maltparser} on the sentences in the training data used in the first phase of training to
+obtain the head words of the semantic arguments.  We then calculate the PMI values of all the pairs
+$<h_A, p>$ where $h$ is the head word of argument $A$ and $p$ is the predicate of the event.  
+For training our baseline classifier, we use the labeled training data from the event composition phase.
+The features to this classifier are the PMI measures of the $<h_A, p>$ pairs estimated from the larger
+dataset.  The classifier thus trained to distinguish between anomalous and normal events is applied to the test set.
+
+\paragraph{LSTM Baseline} LSTM Basline.
+
 \begin{table}
 \begin{center}
   \begin{tabular}[c]{|c|c|c|}
- \hline
- \multicolumn{2}{|c|}{Accuracy} & 65.44\% \\
- \hline
- \multirow{2}{*}{Anomalous} & Precision & 56.55\% \\
  \cline{2-3}
- & Recall & 48.22\% \\
+ \multicolumn{1}{c|}{}& \textbf{Accuracy} & \textbf{F-Score} \\
  \hline
- \multirow{2}{*}{Normal} & Precision & 64.62\% \\
- \cline{2-3}
- & Recall & 77.66\% \\
+ PMI Baseline& 45.2\% & 45.1\%\\
+ LSTM Baseline & 82.5\% & 77.4\%\\
+ \hline
+ NEM & \textbf{84.9\%}& \textbf{79.7\%}\\
  \hline
   \end{tabular}
 \end{center}
- \caption{Classification Performance}
- \label{table:res1}
+ \caption{Classification Performance and Comparison with Baselines}
+ \label{table:nem_anomaly_results}
 \end{table}
-Table~\ref{table:res1} shows these results.  It can be noted that the accuracy
-is significantly higher than a random 
-expectation of 50\%.  The precision of a random classifier in predicting
-anomalous events is expected to be 41\%, since 
+
+Table~\ref{table:res1} shows the results and a comparison with the PMI based baseline.  The accuracy of the 
+baseline classifier is lower than 50\%, which is the expected accuracy of a classifier that assigns labels randomly.  
+The precision of that random classifier in predicting anomalous events is expected to be 41\%, since 
 that is the percentage of anomaly labels in our reference set as described in
-Section~\ref{sec:annot}.
+Section~\ref{sec:nem_annot}.  The accuracy of NEM is higher than the baseline model.
+One possible reason for the PMI based baseline having higher recall in 
+predicting anomaly and lower precision is that the statistics estimated from larger training data cannot
+be generalized to the test set due to sparsity issues.  This indicates the advantage of using continuous
+representations at a higher level of abstraction as features for classification.
 
-\subsection{Proposed Work}
-
-\section{Understanding Experiments}
-\subsection{Data}
-\subsection{Proposed Work}
+To further compare NEM with human annotators, we give to MACE, the binary labels produced
+by NEM along with the annotations and
+measure the competence.  For the sake of comparison, we also give to MACE, a list of
+random binary labels as one of the annotations 
+to measure the competence of a hypothetical worker that made random choices. 
+These results are reported in Table~\ref{table:res2}.
+\begin{table}
+\begin{center}
+  \begin{tabular}[c]{|c|c|}
+ \hline
+  Human average & 0.59 \\
+  \hline
+  Human highest  & 0.70 \\
+  \hline
+  Human lowest & 0.26 \\
+  \hline
+  Random & 0.02 \\
+  \hline
+  NEM &  \\
+  \hline
+  \end{tabular}
+\end{center}
+ \caption{Anomaly Detection Competence}
+ \label{table:res2}
+\end{table}
+It can be seen that the performance of NEM is comparable at least to the least
+competent human.

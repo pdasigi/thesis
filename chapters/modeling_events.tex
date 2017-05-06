@@ -157,9 +157,9 @@ news\footnote{\url{
 http://www.nbcnews.com/html/msnbc/3027113/3032524/4429950/4429950_1.html}}, 
 such as the following: 
 \begin{itemize}
- \item \textit{India weaponizes world's hottest chili.}
- \item \textit{Man recovering after being shot by his dog.}
- \item \textit{Thai snake charmer puckers up to 19 cobras.}
+ \item[] \textit{India weaponizes world's hottest chili.}
+ \item[] \textit{Man recovering after being shot by his dog.}
+ \item[] \textit{Thai snake charmer puckers up to 19 cobras.}
 \end{itemize}
 We assume that the events extracted from this source, called NBC Weird Events
 (NWE) henceforth, are
@@ -277,13 +277,21 @@ language model features.
 \section{Model for Semantic Anomaly Detection}
 Neural Event Model (NEM) is a supervised model that learns to differentiate between anomalous and
 normal events by 
-classifying the event embeddings. We treat the problem as a binary classification problem, with
+classifying dense representations of events, otherwise known as event embeddings. We treat the problem as a binary classification problem, with
 \textit{normal} and \textit{anomalous} being the two classes.
 The event embeddings are computed using a structured composition model
 that represents an event as the composition of the five slot-fillers: \textbf{action},
 \textbf{agent}, \textbf{patient}, \textbf{time} and \textbf{location}.
 Figure~\ref{fig:nem} shows the pipeline for anomalous event detection using NEM. We
-first identify the fillers for the five slots mentioned above, by running a Semantic Role Labeler (SRL).
+first identify the fillers for the five slots mentioned above, by running a PropBank \citep{palmer2005proposition}
+style Semantic Role Labeler (SRL). We use the following mapping of roles to obtain the event structure:
+\begin{itemize}
+ \item V $\rightarrow$ action
+ \item A0 $\rightarrow$ agent
+ \item A1 $\rightarrow$ patient
+ \item AM-TMP $\rightarrow$ time
+ \item AM-LOC $\rightarrow$ location
+\end{itemize}
 This structured input is then passed to NEM. The model has three components:
 
 \paragraph{Argument Composition} This component encodes all the role fillers as vectors in the same space.
@@ -299,7 +307,7 @@ $a_s$ represents the vector representation of that slot filler.
 \paragraph{Event Composition} The slot filler representations are then composed using slot specific
 projection weights to obtain a single event representation. Concretely,
 \begin{align}
- \bar{a}_s &= tanh(W_s^\intercal a_s + b_s) \quad \text{where } s \in \{c,g,p,t,l\} \\
+ \bar{a}_s &= \tanh(W_s^\intercal a_s + b_s) \quad \text{where } s \in \{c,g,p,t,l\} \\
  e &=  \bar{a}_c + \bar{a}_g + \bar{a}_p + \bar{a}_t + \bar{a}_l 
 \end{align}
 $W_s \in \mathbb{R}^{d \times d}$ and $b_s \in \mathbb{R}^{d}$ are slot specific projection weights and biases respectively, with $s$ denoting one of a\underline{c}tion,
@@ -326,25 +334,28 @@ As it can be seen, the layer projects the event representation into a two-dimens
 \subsection{Training}
 Given the output from NEM, we define
 \begin{align}
- p^1_e &= P(\text{anomalous} | e) \\
- p^1_e &= P(\text{normal} | e)
+ p^1_e(\theta) &= P(\text{anomalous} | e; \theta) \\
+ p^0_e(\theta) &= P(\text{normal} | e; \theta)
 \end{align}
-and compute the label loss based on the prediction at the end of anomaly classification as a cross entropy loss as follows:
-\begin{align}
-J &= \left( - l \log p^1_e + (1-l) \log p^0_e \right)
-\end{align}
+where $\theta$ are the parameters in the model and compute the label loss based on the prediction at the end of anomaly classification as a cross entropy loss as follows:
+\begin{equation}
+J(\theta) = - l \log p^1_e(\theta) + (1-l) \log p^0_e(\theta)
+\end{equation}
 where $l$ is the reference binary label indicating whether the event is normal or
 anomalous. The three components of the model described above: argument composition, event composition and anomaly classification are all trained jointly.
 That is, we optimize the following objective.
 \begin{equation}
- \argmin_{\theta} J
+ \theta^* = \argmin_{\theta} J(\theta)
 \end{equation}
 where $\theta$ includes all $W_s$ and $b_s$ from all the slots, $W_e$ and $b_e$ from event composition and also all the LSTM parameters from argument composition.
-We optimize this objective using ADAM \citep{kingma2014adam}. 
+We optimize this objective using ADAM \citep{kingma2014adam}. The model is implemented\footnote{The code is publicly available at \url{https://github.com/pdasigi/neural-event-model}}
+using Keras \citep{chollet2015keras}. Note that the model described here is an extension of the one described in our previously published paper \citep{dasigi2014modeling}.
+The main improvements here include using an LSTM-RNN as the encoder in argument composition instead of a simple RNN, and jointly training argument composition, event composition and anomaly classification,
+whereas the older model included training argument composition separately using an unsupervised objective.
 
 \section{Results}
 We merged the two anomaly classes (strange and highly unusual) and calculated accuracy and F-score (for the anomaly class) of the binary
-classifier\footnote{Note that the model described here is an extension of the one proposed by..}. For the sake of comparison, we also define the following two baseline models.
+classifier. For the sake of comparison, we also define the following two baseline models.
 
 \paragraph{PMI Baseline} We compare the performance of our model against a baseline that is based
 on how well the semantic arguments in the event match the selectional preferences 
@@ -358,7 +369,16 @@ For training our baseline classifier, we use the labeled training data from the 
 The features to this classifier are the PMI measures of the $<h_A, p>$ pairs estimated from the larger
 dataset.  The classifier thus trained to distinguish between anomalous and normal events is applied to the test set.
 
-\paragraph{LSTM Baseline} LSTM Basline.
+\paragraph{LSTM Baseline} To investigate the importance of our proposed event representation, we also implemented a LSTM baseline that
+directly encodes sentences. The following equations describe the model.
+\begin{align}
+ w &= \text{LSTM}(I) \\
+ \bar{w} &= \tanh(W_w^\intercal w + b_w) \\
+ p_u &= \text{softmax}(W_u^\intercal \bar{w} + b_u)
+\end{align}
+Note that this model is comparable in complexity, and has the same number of non-linear transformations as NEM. $\bar{w}$ represents a
+word level composition instead of an argument-level composition in NEM, and $p_u$ is a probability distribution defined over an
+\underline{u}nstructured composition as features. Training of this baseline model is done in the same way as NEM.
 
 \begin{table}
 \begin{center}
@@ -377,40 +397,60 @@ dataset.  The classifier thus trained to distinguish between anomalous and norma
  \label{table:nem_anomaly_results}
 \end{table}
 
-Table~\ref{table:res1} shows the results and a comparison with the PMI based baseline.  The accuracy of the 
+Table~\ref{table:nem_anomaly_results} shows the results and a comparison with the two baselines.  The accuracy of the 
 baseline classifier is lower than 50\%, which is the expected accuracy of a classifier that assigns labels randomly.  
-The precision of that random classifier in predicting anomalous events is expected to be 41\%, since 
-that is the percentage of anomaly labels in our reference set as described in
-Section~\ref{sec:nem_annot}.  The accuracy of NEM is higher than the baseline model.
-One possible reason for the PMI based baseline having higher recall in 
-predicting anomaly and lower precision is that the statistics estimated from larger training data cannot
-be generalized to the test set due to sparsity issues.  This indicates the advantage of using continuous
-representations at a higher level of abstraction as features for classification.
+As seen in the table, the LSTM model proves to be a strong baseline, but it under performs in comparison with NEM,
+showing the value of our proposed event composition model.
 
-To further compare NEM with human annotators, we give to MACE, the binary labels produced
-by NEM along with the annotations and
+To further compare NEM with human annotators, we give to MACE, the binary predictions produced
+by NEM, and those by the LSTM baseline along with the annotations and
 measure the competence.  For the sake of comparison, we also give to MACE, a list of
 random binary labels as one of the annotations 
 to measure the competence of a hypothetical worker that made random choices. 
-These results are reported in Table~\ref{table:res2}.
+These results are reported in Table~\ref{table:nem_mace_competence}.
 \begin{table}
 \begin{center}
   \begin{tabular}[c]{|c|c|}
  \hline
-  Human average & 0.59 \\
+ Human highest  & 0.896 \\
+  Human average & 0.633 \\
+  Human lowest & 0.144 \\
   \hline
-  Human highest  & 0.70 \\
+  Random & 0.054 \\
   \hline
-  Human lowest & 0.26 \\
-  \hline
-  Random & 0.02 \\
-  \hline
-  NEM &  \\
+  LSTM Baseline & 0.743 \\
+  NEM &  0.797 \\
   \hline
   \end{tabular}
 \end{center}
  \caption{Anomaly Detection Competence}
- \label{table:res2}
+ \label{table:nem_mace_competence}
 \end{table}
-It can be seen that the performance of NEM is comparable at least to the least
-competent human.
+Unsurprisingly, the competence of the random classifier is very low, and is worse than the least competent human.
+It can be seen that MACE predicts both the LSTM baseline and NEM to be more competent than human average. This is an encouraging
+result, especially given that this is a hard problem even for humans.
+
+\section{Discussion}
+%TODO: Error analysis
+One important aspect of anomaly that is currently not handled by NEM
+is the level of generality of the concepts the events contain.  Usually
+more general concepts cause events to be more normal since they convey
+lesser information.  For example, an American soldier shooting another American
+soldier
+may be considered unusual, while a soldier shooting another soldier may not be
+as unusual, and at the 
+highest level of generalization, a person shooting another person is normal. 
+This information
+of generality has to be incorporated into the event model.  This can be achieved
+by integrating 
+real world knowledge from knowledge bases like Wordnet \cite{miller1995wordnet}
+or from corpus 
+statistics like the work by \cite{lin1998automatic} into the event model.  
+\cite{bordes2011learning} learn continuous representations of 
+entities and relations in knowledge bases.  More recently, an alternative approach
+for doing the same was proposed by \cite{chen2013learning}.  These representations
+can greatly help modeling events.
+
+Finally, the idea of modeling event composition can help processing event data
+in general and can 
+be applied to other tasks like finding co-referent events.

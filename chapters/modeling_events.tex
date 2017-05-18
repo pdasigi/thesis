@@ -70,7 +70,7 @@ representations of individual words, while explicitly guided by the semantic
 role structure. This representation can be understood as an embedding of the
 event in an event space. 
 
-\section{Linguistic Background} \label{sec:nem_background}
+\section{Related Work} \label{sec:nem_background}
 Selectional preference, a notion introduced by \cite{wilks1973preference}, 
 refers to the paradigm of modeling semantics of
 natural language in terms of the restrictions a verb places on its arguments. 
@@ -400,7 +400,17 @@ word level composition instead of an argument-level composition in NEM, and $p_u
 Table~\ref{table:nem_anomaly_results} shows the results and a comparison with the two baselines.  The accuracy of the 
 baseline classifier is lower than 50\%, which is the expected accuracy of a classifier that assigns labels randomly.  
 As seen in the table, the LSTM model proves to be a strong baseline, but it under performs in comparison with NEM,
-showing the value of our proposed event composition model.
+showing the value of our proposed event composition model. The difference between the performance of
+NEM and the LSTM baseline is statistically significant with $p < 0.0001$. Figure~\ref{fig:nem_roc} shows the ROC curves
+for NEM and the LSTM baseline.
+\begin{figure}
+  \begin{center}
+  \includegraphics[width=4in]{figures/nem_roc.png}
+  \caption{ROC curves for the LSTM baseline and NEM}
+  \label{fig:nem_roc}
+  \end{center}
+\end{figure}
+
 
 To further compare NEM with human annotators, we give to MACE, the binary predictions produced
 by NEM, and those by the LSTM baseline along with the annotations and

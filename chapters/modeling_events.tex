@@ -440,8 +440,13 @@ Unsurprisingly, the competence of the random classifier is very low, and is wors
 It can be seen that MACE predicts both the LSTM baseline and NEM to be more competent than human average. This is an encouraging
 result, especially given that this is a hard problem even for humans.
 
-\section{Discussion}
+\section{Summary and Discussion}
 %TODO: Error analysis
+In this chapter, we have looked at how selectional preferences can be leveraged to model events and represent
+them in such a way as to distinguish anomalous events from normal events. Results from our controlled experiments
+comparing the proposed model with one that directly encodes whole sentences have shown the value of using the proposed structured
+composition. 
+
 One important aspect of anomaly that is currently not handled by NEM
 is the level of generality of the concepts the events contain.  Usually
 more general concepts cause events to be more normal since they convey
@@ -459,8 +464,6 @@ statistics like the work by \cite{lin1998automatic} into the event model.
 \cite{bordes2011learning} learn continuous representations of 
 entities and relations in knowledge bases.  More recently, an alternative approach
 for doing the same was proposed by \cite{chen2013learning}.  These representations
-can greatly help modeling events.
-
-Finally, the idea of modeling event composition can help processing event data
+can greatly help modeling events. Finally, the idea of modeling event composition can help processing event data
 in general and can 
 be applied to other tasks like finding co-referent events.

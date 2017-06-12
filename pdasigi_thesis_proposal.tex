@@ -63,10 +63,10 @@
 \trnumber{}
 
 \committee{
-Eduard Hovy, CMU (Chair) \\
-Chris Dyer, CMU, Google Deepmind \\
-William Cohen, CMU \\
-Sumit Chopra, Facebook AI Research
+Eduard Hovy (Chair) \\
+Chris Dyer \\
+William Cohen \\
+Luke Zettlemoyer
 }
 
 \support{}
@@ -75,7 +75,7 @@ Sumit Chopra, Facebook AI Research
 % copyright notice generated automatically from Year and author.
 % permission added if \permission{} given.
 
-\keywords{neural networks, knowledge base, hybrid NLU models}
+\keywords{natural language understanding, knowledge, neural networks, end-to-end models, semantic parsing, question answering}
 
 \maketitle
 
@@ -91,34 +91,31 @@ Sumit Chopra, Facebook AI Research
 
 \begin{abstract}
 Natural Language Understanding (NLU) systems
-process human generated text (or speech) at a deep semantic level and organize
-the information in a way that is useful for downstream applications such as
-question answering, textual entailment or summarization. Recent
-advances in NLU rely heavily on representation learning or deep learning approaches. They generally involve two main steps.
-The first is encoding, where words (or other basic linguistic units) within the input
-are composed to compute encoded representations of the inputs, which 
-are then used in the second step as features in a classifier or a structured prediction component to produce the desired
-output. In this thesis, we identify two main limitations in this pipeline, and address them by incorporating implicit knowledge
-and reasoning over explicit knowledge.
+process human generated text (or speech) at a deep semantic level in a way that is useful for downstream applications such as
+question answering, textual entailment or summarization. In this thesis, we examine the role of 
+knowledge in NLU, and build systems that effectively encode and reason over knowledge.
+We identify two kinds of knowledge, and make the following distinction between them: \textbf{implicit knowledge} is that which
+is missing in the input utterances, but necessary for understanding them, and \textbf{explicit knowledge} is the additional context that
+NLU systems need to reason over, for complete comprehension. A generic NLU pipeline typically involves two main components. 
+The first is \textbf{encoding}, where words (or other basic linguistic units) within the inputs are composed to compute encoded representations, 
+which are then used as features in the second component, \textbf{prediction}, to produce the desired output. We describe several NLU systems
+that follow this pipeline, but with encoders that also encode implicit knowledge, or predictors that effectively reason over explicit knowledge.
 
-In the first part of this thesis, we show how input encoding can be improved by encoding implicit or background knowledge. While distributional methods for 
-encoding inputs have been successfully used to represent meaning of words in the context of other words in the input,
-and thus learn complex functions of their distributional properties, there are other
-aspects of semantics that are out of their reach. These aspects are related to
-commonsense or real world information which is part of shared human knowledge but is not explicitly
-present in the input. We address this limitation using two methods that rely on external resources. The first is by modeling the selectional
-restrictions verbs place on their
+The first part of the thesis deals with implicit or background knowledge. While distributional methods for encoding inputs have been
+successfully used to represent meaning of words in the context of other words in the input,
+and thus learn complex functions of their distributional properties, there are other aspects of semantics that are out of their reach. These aspects are related to
+commonsense or real world information which is part of shared human knowledge but is not explicitly present in the input. We address this limitation
+using two methods that rely on external resources. The first is by modeling the selectional restrictions verbs place on their
 semantic role fillers. We use this model to encode events, and show that these event representations are useful in detecting newswire anomalies.
-Our second approach towards augmenting distributional methods is by using external knowledge bases like WordNet. We compute
-ontology-grounded token-level representations of words and show that these representations are useful in predicting prepositional phrase attachments.
+Our second approach towards augmenting distributional methods is using external knowledge bases like WordNet. We compute
+ontology-grounded token-level representations of words and show that these representations are useful in predicting prepositional phrase attachments and textual entailment.
 
-The second part of the thesis focuses on reasoning over explicit knowledge. Many NLU tasks require additional contextual information beyond a single sentence. Examples of such tasks
-include machine comprehension, where the system is required to read some text and answer questions about it. These tasks
-require models that can effectively reason over structured or unstructured contexts. For structured contexts, we first describe a type constrained neural semantic parsing framework for answering questions
-given semi-structured tables as the context. Our parser is an encoder-decoder model that generates well-typed logical forms based on a grammar. With simple entity linking and context-graph
-embedding methods, we achieve state of the art performance on the \textsc{WikiTableQuestions} dataset. Proposed work in this area includes using the structure of tables in context more effectively
-to improve entity linking, and application of this framework to answering questions in other domains. For unstructured contexts, we propose to investigate the role of retrieval methods for obtaining contexts
-for question answering using neural network models with explicit memory components and build models that can adaptively reason and learn to retrieve relevant context given a question.
+The second part of the thesis focuses on reasoning over explicit knowledge. Many machine comprehension tasks require interpreting input utterances in context of other explicit structured
+or unstructured information. For structured contexts, we first describe a type constrained neural semantic parsing framework for answering questions
+given semi-structured tables as the context. With simple entity linking and context-graph embedding methods, we achieve state of the art performance on the \textsc{WikiTableQuestions} dataset.
+Proposed work in this area includes improved entity linking, and application of this framework to answering questions in other domains. For unstructured contexts, we propose to investigate
+the role of retrieval methods for obtaining contexts in question answering using neural network models with explicit memory components,
+and build models that can adaptively reason and learn to retrieve relevant context given a question.
 
 \end{abstract}
 

@@ -1,3 +1,17 @@
+\section{Introduction}
+In this chapter, we describe a system that models implicit knowledge by exploiting the structure
+in inputs. Our approach relies on the co-occurrence of fillers of slots given by the structure to
+capture this knowledge. This notion was referred to as Selectional Preference \cite{wilks1973preference}
+in earlier literature (see Section~\ref{sec:nem_background} for more information). While this notion was earlier
+restricted to verbs and their arguments in dependency structures, we hypothesize that it extends to
+other kinds of structures as well, and consequently, it can be used for modeling appropriate implicit semantic knowledge.
+
+This chapter shows one instantiation of implicit knowledge, and we select the appropriate structures to model selectional
+preferences in. The task presented here is that of differentiating between normal news headlines and strange or weird ones,
+and the implicit knowledge required for this task is fundamental to understanding events. Hence, we obtain the structured
+representations of the input utterances from a Semantic Role Labeler, a tool which identifies the eventive predicate in a given
+input sentence, and its corresponding role fillers.
+
 \section{Understanding Events}
 Events are fundamental linguistic elements in human speech. Thus understanding 
 events is a fundamental prerequisite for deeper semantic 
@@ -440,14 +454,23 @@ Unsurprisingly, the competence of the random classifier is very low, and is wors
 It can be seen that MACE predicts both the LSTM baseline and NEM to be more competent than human average. This is an encouraging
 result, especially given that this is a hard problem even for humans.
 
-\section{Summary and Discussion}
+\section{Conclusion}
 %TODO: Error analysis
 In this chapter, we have looked at how selectional preferences can be leveraged to model events and represent
 them in such a way as to distinguish anomalous events from normal events. Results from our controlled experiments
 comparing the proposed model with one that directly encodes whole sentences have shown the value of using the proposed structured
-composition. 
+composition.
 
-One important aspect of anomaly that is currently not handled by NEM
+The model we have shown in this chapter is just one instantiation of using selectional preferences to capture implicit knowledge.
+In addition to some of the traditional uses of selectional preferences in dependency structures described in Section~\ref{sec:nem_background},
+there also exists a large body of work in applications of selectional preferences to relations among entities. Knowledge base completion and 
+relation extraction
+\cite[among others]{mintz2009distant,sutskever2009modelling,nickel2011three,bordes2011learning,socher2013reasoning,gardner2014incorporating},
+fall under this category.
+
+There are limitations to the kind of implicit knowledge that selectional preferences over processed inputs can capture.
+There is often an unmet need for encoding factual commonsense knowledge. 
+For example, one important aspect of anomaly that is currently not handled by NEM
 is the level of generality of the concepts the events contain.  Usually
 more general concepts cause events to be more normal since they convey
 lesser information.  For example, an American soldier shooting another American
@@ -455,15 +478,6 @@ soldier
 may be considered unusual, while a soldier shooting another soldier may not be
 as unusual, and at the 
 highest level of generalization, a person shooting another person is normal. 
-This information
-of generality has to be incorporated into the event model.  This can be achieved
-by integrating 
-real world knowledge from knowledge bases like Wordnet \cite{miller1995wordnet}
-or from corpus 
-statistics like the work by \cite{lin1998automatic} into the event model.  
-\cite{bordes2011learning} learn continuous representations of 
-entities and relations in knowledge bases.  More recently, an alternative approach
-for doing the same was proposed by \cite{chen2013learning}.  These representations
-can greatly help modeling events. Finally, the idea of modeling event composition can help processing event data
-in general and can 
-be applied to other tasks like finding co-referent events.
+This information about generality can be incorporated into the event model only
+by using real world knowledge from knowledge bases like Wordnet \cite{miller1995wordnet}. We pursue that direction
+in Chapter~\ref{chapter:ontolstm}.

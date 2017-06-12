@@ -1,5 +1,8 @@
-In this chapter, we describe incorporating into encoders the kind of background
-knowledge that is available in lexical ontologies. The model shown here is an
+\section{Introduction}
+In this chapter, we describe augmenting encoders with the kind of background
+knowledge that is available in external knowledge sources.
+
+The model shown here is one specific kind of knowledge augmented encoder. It is an
 ontology-aware recurrent neural network, an encoder that computes token level 
 word representations grounded in an ontology (Wordnet).
 The kind of background knowledge we deal with here is that of various senses of
@@ -506,3 +509,18 @@ parameters for the remaining parts of the models in both cases.
 %\cite{bowman2016fast} report that they have 3M parameters in their model, 
 none for the input representations themselves.
 
+\section{Conclusion}
+In this chapter, we showed a grounding of lexical items which acknowledges the semantic ambiguity 
+of word types using WordNet and a method to learn a context-sensitive distribution over their representations.
+We also showed how to integrate the proposed representation with recurrent neural networks for modeling sentences,
+showing that the proposed WordNet-grounded context-sensitive token embeddings outperforms standard type-level embeddings
+for predicting PP attachments and textual entailment.
+
+We encoded a specific kind of background knowledge using WordNet in this work, but the methods described here can be extended 
+to other kinds of structured knowledge sources as well. For example, one can effectively encode entities in text, using structured information
+from Freebase. Such a model may help tasks like factual question answering.
+
+One potential issue with the approach suggested in this chapter is
+linking ambiguity. That is, deciding which entities in the background knowledge base, or concepts in the background ontology can be linked to
+the tokens in the input utterance. In this chapter, we did not have to deal with this issue because linking words to WordNet concepts is a
+trivial process. However, when extending this method to other kinds of knowledge bases, one may need to perform explicit entity or concept linking.

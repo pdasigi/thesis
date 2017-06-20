@@ -35,7 +35,7 @@ In the Chapter~\ref{chapter:ontolstm}, we linked text to a structured knowledge 
 prepositional phrase attachment tasks. By giving the encoder, access to the hypernym paths of relevant concepts we showed that we can learn useful task-dependent generalizations using an attention mechanism.
 
 We defined contextual knowledge as the explicit additional information that reading comprehension systems need to reason over, during prediction. In this thesis, we proposed to pursue two research goals towards effectively reasoning over semi-structured and unstructured contextual knowledge.
-First, as described in Chapter~\ref{chapter:neural_semantic_parsing}, we will explore type-driven neural network based semantic parsers to reason over semi-structured contexts for QA tasks where only the question-answer pairs are given. Our preliminary experiments with such a parser show promising
+First, as described in Chapter~\ref{chapter:nnsp}, we will explore type-driven neural network based semantic parsers to reason over semi-structured contexts for QA tasks where only the question-answer pairs are given. Our preliminary experiments with such a parser show promising
 results on the \textsc{WikitablesQuestions} dataset. Second, we propose to augment explicit memory based neural network models with a stochastic retrieval module in Chapter~\ref{chapter:memnet_qa}. While there has been a lot of progress in explicit memory based models for reading comprehension, to the best of our knowledge, all the
 work deals with problems where the context is finite and well defined. We will look at tasks where the relevant context needs to be retrieved before any reasoning can be performed over it, and our proposed approach involves jointly training the retrieval and reasoning components, and determining
 when to stop retrieving contexts depending on the inputs.
@@ -44,17 +44,17 @@ when to stop retrieving contexts depending on the inputs.
 \begin{itemize}
     \item Leveraging Selectional Preferences to Model Events: Done
     \begin{itemize}
-     \item Published at COLING 2014
+     \item Published at COLING 2014 (joint work with Ed Hovy)
     \end{itemize}
 
     \item Ontology Aware Token Embeddings: Done
     \begin{itemize}
-        \item Accepted at ACL 2017
+        \item Accepted at ACL 2017 (joint work with Waleed Ammar, Chris Dyer, and Ed Hovy)
     \end{itemize}
     
     \item Type-Driven Neural Semantic Parsing: Partially done
     \begin{itemize}
-     \item Initial results under review at EMNLP 2017
+     \item Initial results under review at EMNLP 2017 (joint work with Jayant Krishnamurthy and Matt Gardner)
      \item Target: Improved model as a ICLR 2018 or TACL submission
     \end{itemize}
 

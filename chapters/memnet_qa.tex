@@ -1,3 +1,6 @@
+We consider the problem of reasoning over unstructured contexts in this chapter, and propose to build a model that can jointly retrieve and
+reason over them.
+
 \section{Memory Networks}
 %TODO: General introduction about the need for explicit memory.
 Memory Networks (MemNet) are a class of models
@@ -23,59 +26,79 @@ as MemN2N.
 
 \begin{figure*}
 \begin{center}
-  \includegraphics[width=6.5in]{figures/memory_network_generic.png}
-  \caption{Schematic showing a generic view of end-to-end memory network}
+  \includegraphics[width=7in]{figures/memory_network_generic.png}
+  \caption{Schematic showing a generic view of memory networks}
   \label{fig:memnet}
   \end{center}
 \end{figure*}
-Figure~\ref{fig:memnet} shows the setup of a generic MemNet. It takes as
-input a set of $N$ context sentences indexed as $\{c_i\}_{i=1}^N$, such that
-$c_i$ is a vector containing the indices of words in the $i^\text{th}$ sentence.
-The sentences are then encoded using the \texttt{EncodeContext} function to
-produce the matrix $C \in \mathbb{R}^{n \times d}$, where each row $C[i]$ is the
-encoding of sentence $c_i$. In addition, the model also takes as input a query
-indexed as $q$, which is a vector containing the indices of the words in the
-query similar to $c_i$ vectors. The query is encoded using \texttt{EncodeQuery}
-to produce $u^0 \in \mathbb{R}^d$. The memory network can have multiple memory
-layers, corresponding to multiple hops. At each hop, a memory layer receives as
-input the output from the previous hop $u^{h-1}$, which is passed to the
-\texttt{SelectMemory} function, which uses an attention mechanism to select the
-relevant parts of the encoded context, conditioned on $u^{h-1}$ and produces
-a summary $s^h$, of the context encoding for the current hop. $s^h$ is then
-passed to \texttt{UpdateMemory} along with $u^{h-1}$, to produce the updated
-memory representation $u^h$ for the current hop. It has to be noted that the
-initial $u^0$ is the encoding of the query itself. Finally, an answer is
-predicted by passing the query encoding $u^0$, and the summary of the
-context, $s^H$ from the final hop $H$ to the \texttt{PredictAnswer} function.
+Figure~\ref{fig:memnet} shows the setup of a generic MemNet. It
+takes as inputs:
+\begin{itemize}
+ \item a set of $N$ context sentences, indexed as $\{context_i\}_{i=1}^N$,
+such that $context_i$ is a vector containing the indices of words in the $i^\text{th}$ sentence.
+  \item a query, a single sentence indexed similar to context.
+\end{itemize}
+
+The sentences are then encoded using the \texttt{EncodeContext} and \texttt{EncodeQuery}
+functions to produce the matrix $\textbf{C}$ and $\textbf{q}$ respectively.
+
+The memory network then reasons over the context, represented \textbf{C}, given the 
+query, represented by \textbf{q} over multiple memory layers, corresponding to multiple hops $i \in \{1, \ldots, h\}$.
+At each hop, a memory layer performs two actions:
+\begin{itemize}
+ \item \texttt{ReadMemory} gets as input either the context ($\textbf{C}$) (in the first hop) or an updated memory representation ($\textbf{M}^i$)
+ (in subsequent hops), and the query representation ($\textbf{q}$) to produce a summary of the memory $\textbf{S}^{i+1}$.
+ \item \texttt{UpdateMemory} produces an updated memory representation ($\textbf{M}^{i+1}$) given the summary ($\textbf{S}^i$) and the query ($\textbf{q}$).
+\end{itemize}
+
+Finally, an answer is
+predicted by passing the query encoding $\textbf{q}$, and the memory state at the
+last hop ($\textbf{M}^h$) to the \texttt{Predict} function.
 
 It can be seen that MemN2N fits into this setup with the following
 configuration:
-% TODO(pradeep): MemN2N actually has two Embedding matrices encoding background
-% for input and output. Also, there is another variant which encodes positions of
-% the words too.
-\begin{flalign*}
-&\texttt{EncodeQuery}(q) = \text{Embedding}_q(q) \\
-&\texttt{EncodeContext}(c_i) = \text{Embedding}_c(c_i) \\
-&\texttt{SelectMemory}(u^{h-1}, C) = \text{softmax}(C.u^{h-1}).C \\
-&\texttt{UpdateMemory}(u^{h-1}, s^h) = u^{h-1} + s^h \\
-&\texttt{PredictAnswer}(u_0, s^H) = \text{softmax}(W.s^H)
-\end{flalign*}
-where $\text{Embedding}_q(.)$ and $\text{Embedding}_c(.)$ are simply bag of
-words models that aggregate the vector representations of all the words given by
-the indices in the input. $W \in \mathbb{R}^{V \times d}$ is a parameter of the
-answer prediction function, causing the softmax to be over the vocabulary size
-$V$. Note that in MemN2N, $u^0$ is not an argument of \texttt{PredictAnswer}.
+\begin{flalign}
+&\texttt{EncodeQuery}(\text{query}) = \text{BOWEncoder}_q(\text{query}) \in \mathbb{R}^{d}\\
+&\texttt{EncodeContext}(\text{Context}) = \text{BOWEncoder}_c(\text{Context}) \in \mathbb{R}^{N \times d}\\
+&\texttt{ReadMemory}(\textbf{q}, \textbf{M}^{i-1}, \textbf{C}) = \text{softmax}(\textbf{C}.\textbf{M}^{i-1}).\textbf{C} \in \mathbb{R}^d\\
+&\texttt{UpdateMemory}(\textbf{q}, \textbf{S}^i, \textbf{C}) = \textbf{q} + \textbf{S}^i \in \mathbb{R}^d \\
+&\texttt{Predict}(\textbf{q}, \textbf{M}^h) = \text{softmax}(W.\textbf{M}^h) \in \mathbb{R}^o
+\end{flalign}
 
-In this chapter, we focus on problems where the context is not well-defined, and needs to
-be retrieved for a big corpus. Accordingly, we propose to add an additional
+where $\text{BOWEncoder}_q(.)$ and $\text{BOWEncoder}_c(.)$ are simply bag of
+words models that aggregate the vector representations of all the words given by
+the indices in the input and average them. $W \in \mathbb{R}^{o \times d}$ is a parameter of the
+answer prediction function, causing the softmax to be over the output vocabulary size
+$o$. Note that in MemN2N, \textbf{q} is not used in \texttt{ReadMemory} and \texttt{Predict}, and
+\textbf{C} is not used in \texttt{UpdateMemory} since MemN2N is one of the simplest forms of MemNets.
+
+In contrast, Gated Attention Reader \cite{dhingra2016gated} is relatively more complex, and uses the following
+configuration:
+
+\begin{flalign}
+&\texttt{EncodeQuery}(\text{query}) = \text{Bi-GRU}_q(\text{query}) \in \mathbb{R}^d\\
+&\texttt{EncodeContext}(\text{Context}) = \text{Bi-GRU}_c(\text{Context}) \in \mathbb{R}^{N_w \times d}\\
+&\texttt{ReadMemory}(\textbf{q}, \textbf{M}^{i-1}, \textbf{C}) = \text{softmax}(\textbf{M}^{i-1}.\textbf{q}).\textbf{M}^{i-1} \in \mathbb{R}^{N_w \times d}\\
+&\texttt{UpdateMemory}(\textbf{q}, \textbf{S}^i, \textbf{C}) = \text{Bi-GRU}_c(\textbf{S}^i.\textbf{q}) \in \mathbb{R}^{N_w \times d} \\
+&\texttt{Predict}(\textbf{q}, \textbf{M}^h) = \text{softmax}(\textbf{M}^h.q) \in \mathbb{R}^{N_w}
+\end{flalign}
+
+The encoders used here are bidirectional Recurrent Neural Networks with Gated Recurrent Units \cite{cho2014learning}. Note that the output of $\text{Bi-GRU}_c$
+is a matrix because it returns outputs from all time steps as a sequence. $N_w$ here denotes the number of tokens in all $N$ sentences in context. The output
+produced here is a probability distribution over all tokens in the context, because this model was proposed for tasks that involve directly selecting a token from
+the context.
+
+Both the models described here assume that the context is well defined and small enough to fit in memory.
+In this chapter, we focus on problems where these assumptions do not hold true, and where the context
+be retrieved from a big corpus. Accordingly, we propose to add an additional
 \texttt{RetrieveContext} module to our generic MemNet architecture.
 Particularly, we are interested in developing MemNet models that
 can figure out whether the available context is sufficient to make a prediction. We first
 describe a target dataset for our model, and then list the issues we propose to address.
 
-\section{Science Question Answering}
-The ScienceQA dataset we use here is significantly different from the
-QA datasets previously used to test memory networks, and requires more complex
+\section{Retrieval for Question Answering}
+The datasets we use here are significantly different from the
+QA datasets previously used to test memory networks, and require more complex
 reasoning. One example of such question is shown below.
 %TODO(pradeep): Make this a table?
 \begin{itemize}
@@ -101,7 +124,7 @@ Or it may span multiple sentences like this:
 \end{itemize}
 
 Or in other cases, the text may not contain the relevant answer at all. Hence, this setup
-requires an module in addition to the ones mentioned that retrieves relevant content from
+requires a module in addition to the ones mentioned, that retrieves relevant content from
 the corpus. However, as the size of the context increases, it becomes more and more expensive to reason over
 it. Also, increased context size may add noise to prediction process. Hence, it is important to
 retrieve context conservatively, and the model should reason whether the retrieved context
@@ -112,7 +135,7 @@ cast the problem of deciding whether the given context is sufficient to answer t
 textual entailment problem. That is, given a multiple choice question with answer options, we
 convert the combination of the question and each of the options into a
 statement, and check whether the statement can be entailed from relevant
-background information. Given this setup, the \texttt{PredictAnswer} function
+background information. Given this setup, the \texttt{Predict} function
 essentially becomes an entailment function. If none of the question-option combinations
 can be entailed from (or contradicted by) the retrieved context, we retrieve more context.
 
@@ -128,7 +151,7 @@ of the context available.
  $C = \texttt{RetrieveContext}(q, L, ContextSize)$, the top $k$ relevant sentences from the corpus\;
  \While{$ContextSize < MaxContextSize$} {
   \eIf{$\texttt{EntailsOrContradicts}(C, q)$}{
-    $a = \texttt{PredictAnswer}(C, q)$ \;
+    $a = \texttt{Predict}(C, q)$ \;
     return $a$
   }{
     $ContextSize += k$ \;
@@ -145,17 +168,19 @@ stop performing additional hops, the proposed algorithm learns to stop retrievin
 \subsection{Potential Issues}
 We identify the following potential issues in building \textsc{AdaptiveRead}.
 \begin{enumerate}
- \item \textbf{Scalability to large corpora}: Depending on the complexity of \texttt{PredictAnswer}, reasoning
+ \item \textbf{Scalability to large corpora}: Depending on the complexity of \texttt{ReadMemory}, reasoning
  over large corpora may prove to be intractable. Earlier work in solving this problem involves building
- hierarchical models \cite{chandar2016hierarchical,choi2016hierarchical}. While \cite{chandar2016hierarchical}
- build a hierarchical memory network that uses a simple dot product for \texttt{RetrieveContext} and \texttt{SelectMemory},
+ hierarchical models \citep{chandar2016hierarchical,choi2016hierarchical}. While \cite{chandar2016hierarchical}
+ build a hierarchical memory network that uses a simple dot product for \texttt{RetrieveContext} and \texttt{ReadMemory},
  and thus use maximum inner product search (MIPS) to do them efficiently, \cite{choi2016hierarchical} perform summarization
  to retrieve context followed by answer prediction. We can use some of their ideas to make \texttt{RetrieveContext} a simpler
- process, and \texttt{SelectMemory} a more expensive one.
+ process, and \texttt{ReadMemory} a more expensive one.
  
  \item \textbf{Difficulty in training}: Clearly, \textsc{AdaptiveRead} makes a hard choice between retrieving context and
  predicting an answer, thus making it impossible to train the model end-to-end using back-propagation. \cite{shen2016reasonet}
- and \cite{choi2016hierarchical} get around this problem using REINFORCE \cite{williams1992simple} algorithm.
+ and \cite{choi2016hierarchical} get around similar problems that involve hard choices by training with 
+ REINFORCE \citep{williams1992simple} algorithm. However, REINFORCE is known to be unstable due to high variance induced by
+ sampling.
 \end{enumerate}
 
 

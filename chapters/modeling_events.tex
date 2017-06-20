@@ -1,7 +1,6 @@
-\section{Introduction}
 In this chapter, we describe a system that models implicit knowledge by exploiting the structure
 in inputs. Our approach relies on the co-occurrence of fillers of slots given by the structure to
-capture this knowledge. This notion was referred to as Selectional Preference \cite{wilks1973preference}
+capture this knowledge. This notion was referred to as Selectional Preference \citep{wilks1973preference}
 in earlier literature (see Section~\ref{sec:nem_background} for more information). While this notion was earlier
 restricted to verbs and their arguments in dependency structures, we hypothesize that it extends to
 other kinds of structures as well, and consequently, it can be used for modeling appropriate implicit semantic knowledge.
@@ -229,7 +228,7 @@ annotated events for evaluating future research.
 \end{table}
 Table~\ref{table:annot} shows some statistics of the annotation task.  We
 compute the Inter Annotator
-Agreement (IAA) in terms of Kripendorff's alpha \cite{krippendorff1980content}. 
+Agreement (IAA) in terms of Kripendorff's alpha \citep{krippendorff1980content}. 
 The advantage of using this
 measure instead of the more popular Kappa is that the former can deal with
 missing information, which is the case with
@@ -240,7 +239,7 @@ corresponds to agreement over the original 4-way decision (including
 \textit{highly unusual} and \textit{strange} decisions.  
 
 Additionally we use
-MACE \cite{hovy2013learning} to assess the quality of 
+MACE \citep{hovy2013learning} to assess the quality of 
 annotation.  MACE models the annotation task as a generative process of
 producing the observed labels conditioned on the 
 true labels and the competence of the annotators, and predicts both the latent
@@ -374,9 +373,9 @@ classifier. For the sake of comparison, we also define the following two baselin
 \paragraph{PMI Baseline} We compare the performance of our model against a baseline that is based
 on how well the semantic arguments in the event match the selectional preferences 
 of the predicate.  We measure selectional preference using Point-wise Mutual Information
-(PMI) \cite{church1990word} of the head words of each semantic argument with the predicate.  
+(PMI) \citep{church1990word} of the head words of each semantic argument with the predicate.  
 The baseline model is built as follows.  We perform dependency parsing using MaltParser
-\cite{nivre2007maltparser} on the sentences in the training data used in the first phase of training to
+\citep{nivre2007maltparser} on the sentences in the training data used in the first phase of training to
 obtain the head words of the semantic arguments.  We then calculate the PMI values of all the pairs
 $<h_A, p>$ where $h$ is the head word of argument $A$ and $p$ is the predicate of the event.  
 For training our baseline classifier, we use the labeled training data from the event composition phase.
@@ -465,7 +464,7 @@ The model we have shown in this chapter is just one instantiation of using selec
 In addition to some of the traditional uses of selectional preferences in dependency structures described in Section~\ref{sec:nem_background},
 there also exists a large body of work in applications of selectional preferences to relations among entities. Knowledge base completion and 
 relation extraction
-\cite[among others]{mintz2009distant,sutskever2009modelling,nickel2011three,bordes2011learning,socher2013reasoning,gardner2014incorporating},
+\citep[among others]{mintz2009distant,sutskever2009modelling,nickel2011three,bordes2011learning,socher2013reasoning,gardner2014incorporating},
 fall under this category.
 
 There are limitations to the kind of implicit knowledge that selectional preferences over processed inputs can capture.
@@ -479,5 +478,5 @@ may be considered unusual, while a soldier shooting another soldier may not be
 as unusual, and at the 
 highest level of generalization, a person shooting another person is normal. 
 This information about generality can be incorporated into the event model only
-by using real world knowledge from knowledge bases like Wordnet \cite{miller1995wordnet}. We pursue that direction
+by using real world knowledge from knowledge bases like Wordnet \citep{miller1995wordnet}. We pursue that direction
 in Chapter~\ref{chapter:ontolstm}.

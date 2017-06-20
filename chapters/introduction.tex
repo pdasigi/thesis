@@ -27,10 +27,10 @@ $\mathbf{o}$ are categorical labels indicating the sentiment or entailment respe
 
 In older feature-rich methods for NLU, 
 Equation~\ref{eq:generic_encoding} is a mapping of the inputs to a hand designed feature space, typically containing patterns over word classes based on
-part-of-speech \cite{corley2005measuring} or Wordnet synsets \cite{moldovan2001logic} shallow linguistic features like dependencies \cite{bos2005recognising}
+part-of-speech \citep{corley2005measuring} or Wordnet synsets \citep{moldovan2001logic} shallow linguistic features like dependencies \citep{bos2005recognising}
 named entity information \cite{tatu2005semantic}, or other features depending on the task. The choice of features was left to the discretion of the ML-practitioners
 designing the NLU systems. In such systems, the modeling emphasis was more on the prediction component, and the encoding component did not involve any learning. 
-More recent systems \cite[among many others]{bahdanau:14,weston2014memory,hermann2015teaching,Xiong2016DynamicMN,bowman2016fast,yang:16} 
+More recent systems \citep[among many others]{bahdanau:14,weston2014memory,hermann2015teaching,Xiong2016DynamicMN,bowman2016fast,yang:16} 
 use representation learning or deep learning techniques to also learn the parameters of the
 $\mathtt{encode}$ function, and typically this is done jointly with learning the parameters of the $\mathtt{predict}$ function, to ensure task-relevancy.
 
@@ -171,22 +171,22 @@ Examples of $\mathbf{K}_e$ include hypernym trees from WordNet for
 incorporating sense and generalization information about concepts while composing sentences and subgraph features from Freebase to encode relations
 between entities seen in the input text. \cite{moldovan2001logic} and \cite{krymolowski1998incorporating} are examples of a feature-rich systems that encoded input sentences in the 
 context of external knowledge. Both systems used WordNet features and other related information about the semantic classes of the words in the input in NLU tasks. While \cite{krymolowski1998incorporating} 
-built a system based on SNoW \cite{CCRR99} for predicting Prepositional Phrase Attachment, \cite{moldovan2001logic} built a Question answering system. In Chapter~\ref{chapter:ontolstm} we describe
+built a system based on SNoW \citep{CCRR99} for predicting Prepositional Phrase Attachment, \cite{moldovan2001logic} built a Question answering system. In Chapter~\ref{chapter:ontolstm} we describe
 a representation-learning application of knowledge-aware encoding where we show the advantages of incorporating WordNet information in recurrent neural networks for encoding sentences. In Chapter~\ref{chapter:nem},
 we leverage selectional preferences in SRL structures to build an NLU system that understands events in the newswire domain.
 
 \paragraph{Reasoning with contextual knowledge}
 $\textbf{K}_p$ inputs allow the prediction step to reason in the context of additional knowledge. $\textbf{K}_p$ can either be structured or unstructured. In cases where it is structured,
 reasoning with it involves producing structured representations of inputs that can be executed against it, and the task becomes Semantic Parsing, which was dealt with using
-both traditional \cite[among others]{Zelle1996LearningTP,Zettlemoyer2005LearningTM,zettlemoyer2007online} and neural network based methods
-\cite{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN}. We build on top of this work on Semantic Parsing, and describe a type driven neural semantic 
-parsing framework in Chapter~\ref{chapter:neural_semantic_parsing}.
+both traditional \citep[among others]{Zelle1996LearningTP,Zettlemoyer2005LearningTM,zettlemoyer2007online} and neural network based methods
+\citep{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN}. We build on top of this work on Semantic Parsing, and describe a type driven neural semantic 
+parsing framework in Chapter~\ref{chapter:nnsp}.
 
 Machine reading comprehension also involves reasoning over contexts, but unstructured ones. This task typically involves encoding some context given as a paragraph and using it to
-produce an answer from an encoded question. Examples of task targeted datasets built to evaluate that capability include MCTest \cite{Richardson2013MCTestAC},
-CNN/Daily Mail dataset \cite{hermann2015teaching}, SQuAD \cite{Rajpurkar2016SQuAD10} and TriviQA \cite{Joshi2017TriviaQAAL}, among others.
-Systems built for these tasks including attentive readers \cite{hermann2015teaching}, variants of memory networks \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN}
-and the more recent Bidirectional Attention Flow \cite{Seo2016BidirectionalAF} can be viewed as different instantiations
+produce an answer from an encoded question. Examples of task targeted datasets built to evaluate that capability include MCTest \citep{Richardson2013MCTestAC},
+CNN/Daily Mail dataset \citep{hermann2015teaching}, SQuAD \citep{Rajpurkar2016SQuAD10} and TriviQA \citep{Joshi2017TriviaQAAL}, among others.
+Systems built for these tasks including attentive readers \citep{hermann2015teaching}, variants of memory networks \citep{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN}
+and the more recent Bidirectional Attention Flow \citep{Seo2016BidirectionalAF} can be viewed as different instantiations
 of the $\mathtt{predict\_with\_context}$ function, where $\textbf{K}_p$ is some background text that needs to be understood to answer a question about it. 
 In Chapter~\ref{chapter:memnet_qa}, we describe a generic formulation of the problem.
 
@@ -239,7 +239,7 @@ components for predicting textual entailment and preposition phrase attachment. 
 of words in the input sentences and show that OntoLSTM is indeed learning useful generalizations of words
 that help the learned representations perform better at the end task.
 
-Chapter~\ref{chapter:neural_semantic_parsing} deals with reasoning over semi-structured contexts. We describe a type-driven
+Chapter~\ref{chapter:nnsp} deals with reasoning over semi-structured contexts. We describe a type-driven
 neural semantic parser aimed at answering compositional questions on Wikipedia tables. It is an encoder-decoder model that generates
 well-typed logical forms that can be executed against graph representations of the tables in context. The parser also includes entity embedding
 and linking modules that are trained jointly using QA supervision. This parser achieves state-of-the art result on \textsc{WikiTableQuestions} dataset.

@@ -1,16 +1,20 @@
 \section{Natural Language Understanding}
-A Natural Language Understanding (NLU) system processes human generated text (or speech) at a deep semantic level and encodes the meaning
-of the processed inputs, such that it can perform well at the task for which it is designed. NLU is thus an umbrella term that includes several
-tasks, that can be defined in terms of their end goals. For example, Question Answering (QA), an NLU task, refers to answering questions about a span of text,
+A Natural Language Understanding (NLU) system should process human generated text (or speech) at a deep semantic level, represent the semantics
+of the processed inputs, and reason over them to perform well at a given task. The effectiveness of NLU systems is often measured in terms of their
+performance at the intended task. The inherent assumption\footnote{We rely on this assumption throughout this thesis. While interpreting the encoded
+representations to test this assumption is also an active research topic, it is beyond the scope of this thesis.} behind taking a task-oriented approach
+towards building NLU systems is that an improvement in the task performance correlates with an improvement in the quality of the semantic representation,
+or in other words, the understanding capability of the computational system.
+
+NLU is thus an umbrella term that includes several tasks, that can be defined in terms of their end goals. For example, Question Answering (QA) refers to answering questions about a span of text,
 or other structured knowledge representations like knowledge bases or even images.
 QA systems are required to encode the meaning of the provided inputs such that the relevant bits of information can be retrieved to answer questions.
 Recognizing Textual Entailment (RTE), another NLU task, refers to the problem of identifying whether the truth value of some text provided as a hypothesis follows from that of another 
 text provided as a premise, and it is usually done by extracting relevant features from the hypothesis and the premise to see if there is enough
-overlap between them in the right direction. Another example of an NLU task is Sentiment Analysis, which is automatically categorizing the opinions expressed in the input
-utterances towards specific targets, which involves extracting appropriate affective states and subjective information, such that a sentiment classifier
-can be built using that information as features. All these tasks require encoding the semantics of the input in a way that is
-at least good enough to perform well at the given task, with the inherent assumption that an improvement in the task performance correlates with an improvement in the
-quality of the semantic representation, or in other words, the understanding capability of the computational system.
+overlap between them in the right direction. Another NLU task is Sentiment Analysis, which requires automatically categorizing the opinions expressed in the input
+utterances towards specific targets. This involves extracting appropriate affective states and subjective information, such that a sentiment classifier
+can be built using that information as features. To perform well at at each of these tasks, the NLU system should encode the semantics of the input to support the
+kind of reasoning appropriate for the task.
 
 In each of the examples above, it can be noticed that there are two common components: an \textbf{encoder} and a \textbf{predictor}. The encoder
 extracts task-relevant features from the input, and the predictor performs the appropriate computation on top of the features given by the encoder
@@ -22,13 +26,14 @@ following two equations.
 \end{align}
 where $\mathbf{I}$ is the set of textual inputs to the NLU system. 
 For example, $\mathbf{I}$  are single sentences in Sentiment Analysis and pairs of sentences in RTE. $\textbf{e}$ are intermediate 
-encoded semantic representations of the inputs (which may or may not be task specific), and $\mathbf{o}$ are the final task specific predictions. For example, in Sentiment Analysis or RTE, 
-$\mathbf{o}$ are categorical labels indicating the sentiment or entailment respectively, and in the case of Semantic Parsing, they are structured outputs or parses.
+encoded representations of the inputs (which may or may not be task specific), and $\mathbf{o}$ are the final task specific predictions. For example, in Sentiment Analysis or RTE, 
+$\mathbf{o}$ are categorical labels indicating the sentiment or entailment respectively, and in the case of Semantic Parsing, they are structured outputs, called parses.
 
+%TODO: Ed:"this paragraph needs a lot more detail"
 In older feature-rich methods for NLU, 
 Equation~\ref{eq:generic_encoding} is a mapping of the inputs to a hand designed feature space, typically containing patterns over word classes based on
-part-of-speech \citep{corley2005measuring} or Wordnet synsets \citep{moldovan2001logic} shallow linguistic features like dependencies \citep{bos2005recognising}
-named entity information \cite{tatu2005semantic}, or other features depending on the task. The choice of features was left to the discretion of the ML-practitioners
+part-of-speech \citep{corley2005measuring} or Wordnet synsets \citep{moldovan2001logic}; shallow linguistic features like dependencies \citep{bos2005recognising};
+named entity information \cite{tatu2005semantic}; or other features depending on the task. The choice of features was left to the discretion of the ML-practitioners
 designing the NLU systems. In such systems, the modeling emphasis was more on the prediction component, and the encoding component did not involve any learning. 
 More recent systems \citep[among many others]{bahdanau:14,weston2014memory,hermann2015teaching,Xiong2016DynamicMN,bowman2016fast,yang:16} 
 use representation learning or deep learning techniques to also learn the parameters of the
@@ -37,22 +42,22 @@ $\mathtt{encode}$ function, and typically this is done jointly with learning the
 \section{Knowledge}
 \label{sec:intro_external_knowledge}
 A computational system that seeks to understand human utterances, cannot do so given the utterances alone. This is because, the utterances themselves
-do not contain all the information needed to comprehend them. The missing information is either part of the background knowledge about the world humans
-inherently possess, or the surrounding context in which the utterance is spoken or written. NLU systems thus need to access this knowledge to comprehend
-human languages.
+seldom contain all the information needed to comprehend them. The missing information is either part of the background knowledge about the world humans
+inherently possess, or contained in the surrounding context in which the utterance is spoken or written. NLU systems thus need to access or infer this knowledge
+to comprehend human languages.
 
-In this thesis, we distinguish between background or implicit knowledge, and contextual or explicit knowledge. We now describe them in the context of NLU.
+In this thesis, we draw a distinction between the two kinds of knowledge described here: background and contextual. We now describe them in the context of NLU.
 
 \subsection{Background Knowledge}
 An issue with the formulation of the problem in Equation~\ref{eq:generic_encoding} is that it is missing a key input: \textbf{background knowledge}. 
 Since human language is aimed at other humans who share 
 the same background knowledge, a lot of information is often not explicitly stated
 for the sake of brevity. The implicit knowledge required to understand language varies 
-from simple commonsense in the case of basic conversations, to complex principles that link 
-concepts in more esoteric communications.
+from simple commonsense in the case of basic conversations, to domain specific knowledge
+about concepts in more esoteric or technical communications.
 
 The notion of implicit knowledge can be illustrated using the following example. Consider the
-events described by the following two sentences:
+events described by the following three sentences:
 
 \begin{itemize}
  \item[] \textit{Cops shoot a man.}
@@ -70,7 +75,7 @@ some combinations of actions and their arguments are more semantically likely th
 Selectional Preference \citep{wilks1973preference}, and we describe that in greater detail in Chapter~\ref{chapter:nem}.
 
 Consider another example of the need for encoding commonsense information, that of solving the 
-textual entailment problem given the following premise, and candidate hypothesis:
+textual entailment problem given the following premise and candidate hypothesis:
 \begin{itemize}
  \item[] \textbf{Premise:} \textit{Children and parents are splashing water at the pool.}
  \item[] \textbf{Hypothesis} \textit{Families are playing outside.}
@@ -91,9 +96,11 @@ or by incorporating external knowledge sources, and used in conjunction with dis
 for NLU systems.
 
 \subsection{Contextual Knowledge}
-A second issue with the generic NLU formulation, particularly with Equation~\ref{eq:generic_prediction}, is that it does not account for the context
+A second issue with the generic NLU formulation, particularly with Equation~\ref{eq:generic_prediction}, is that it does not take into account the context
 in which the input utterance occurs. Typically, context includes the circumstances that form the setting for the input utterances to be fully understood,
-and hence it significantly contributes to the meaning of the inputs. In this thesis, we will refer to this additional information as \textbf{contextual knowledge}.
+and hence it significantly contributes to the meaning of the inputs.
+%TODO: Ed: "There are several types of contexts: co-text, situational, political, environmental..."
+In this thesis, we will refer to this additional information as \textbf{contextual knowledge}.
 Unlike background knowledge, this is not implicit in the
 text being read. However, reasoning in the presence of contextual knowledge still poses significant challenges. An automated reading comprehension system that
 reasons over this additional information is expected to effectively do the following: encode the context in such a way that the bits of information relevant to the input
@@ -146,7 +153,7 @@ option pairs.
 
 
 \section{Knowledge-Aware NLU}
-Given that knowledge, both implicit and explicit, plays an important role in several real-world language understanding tasks, we need to reconsider
+Given that knowledge, both background and contextual, plays an important role in several real-world language understanding tasks, we need to reconsider
 our definition of the generic NLU pipeline.
 Without background knowledge, the encoding of inputs will be incomplete, and the NLU systems might not generalize beyond the specific patterns 
 seen in the training data to unseen test cases. Without contextual knowledge, and an effective method to link encoded inputs to contexts, the NLU
@@ -154,7 +161,7 @@ systems will simply not have sufficient information to produce the desired resul
 \begin{align}
  \mathbf{e} &= \mathtt{encode\_with\_background}(\mathbf{I}, \mathbf{K}_e) \label{eq:encoding_with_knowledge}\\
  \mathbf{e}_{K_p} &= \mathtt{encode\_context}(\mathbf{K}_p) \\ \label{eq:knowledge_encoding}
- \mathbf{o} &= \mathtt{predict\_with\_context}(\mathbf{e}, \mathbf{e}_{K_p}) \label{eq:prediction_with_knowledge}
+ \mathbf{o} &= \mathtt{predict\_in\_context}(\mathbf{e}, \mathbf{e}_{K_p}) \label{eq:prediction_with_knowledge}
 \end{align}
 where $\mathbf{K}_e$ and $\mathbf{K}_p$ represent the knowledge required for encoding and prediction respectively. They
 come from different sources and augment the inputs in different ways.
@@ -165,24 +172,30 @@ problems, except in Chapter~\ref{chapter:memnet_qa}, where we focus on context r
 and datasets where obtaining appropriate knowledge is easy.
 
 \paragraph{Better encoding with background knowledge}
-$\mathbf{K}_e$ is additional knowledge used to better compose the units in input text. Particularly, this allows for
-obtaining input encoding that respects the selectional restrictions of the units being composed.
-Examples of $\mathbf{K}_e$ include hypernym trees from WordNet for
-incorporating sense and generalization information about concepts while composing sentences and subgraph features from Freebase to encode relations
+$\mathbf{K}_e$ is additional knowledge used to fill in the semantic gaps in the inputs, and thus obtain better
+encoded representations of them. One source of such background knowledge is knowledge bases and ontologies, which encode
+it explicitly. Examples include hypernym trees from WordNet for incorporating sense and generalization information about
+concepts while composing sentences and subgraph features from Freebase to encode relations
 between entities seen in the input text. \cite{moldovan2001logic} and \cite{krymolowski1998incorporating} are examples of a feature-rich systems that encoded input sentences in the 
 context of external knowledge. Both systems used WordNet features and other related information about the semantic classes of the words in the input in NLU tasks. While \cite{krymolowski1998incorporating} 
-built a system based on SNoW \citep{CCRR99} for predicting Prepositional Phrase Attachment, \cite{moldovan2001logic} built a Question answering system. In Chapter~\ref{chapter:ontolstm} we describe
-a representation-learning application of knowledge-aware encoding where we show the advantages of incorporating WordNet information in recurrent neural networks for encoding sentences. In Chapter~\ref{chapter:nem},
-we leverage selectional preferences in SRL structures to build an NLU system that understands events in the newswire domain.
+built a system based on SNoW \citep{CCRR99} for predicting Prepositional Phrase Attachment, \cite{moldovan2001logic} built a QA system. In Chapter~\ref{chapter:ontolstm} we describe
+a representation-learning application of knowledge-aware encoding where we show the advantages of incorporating WordNet information in recurrent neural networks for encoding sentences.
+
+Such explicit sources of knowledge are often incomplete, or may not contain the kind of knowledge needed to fill the gaps to obtain representations need for the task at hand. 
+An alternative source of background knowledge is a model of selectional preferences \citep{wilks1973preference}, given an appropriate structured representation of the inputs.
+We exploit the idea that predicates place certain constraints on the semantic content of their arguments, and some predicate-argument structures are more common than others.
+Accordingly, we model the co-occurrences within the appropriate structures to model these preferences. In Chapter~\ref{chapter:nem}, we explain this idea in greater detail
+and leverage selectional preferences in SRL structures to build an NLU system that understands events in the newswire domain.
 
 \paragraph{Reasoning with contextual knowledge}
-$\textbf{K}_p$ inputs allow the prediction step to reason in the context of additional knowledge. $\textbf{K}_p$ can either be structured or unstructured. In cases where it is structured,
-reasoning with it involves producing structured representations of inputs that can be executed against it, and the task becomes Semantic Parsing, which was dealt with using
-both traditional \citep[among others]{Zelle1996LearningTP,Zettlemoyer2005LearningTM,zettlemoyer2007online} and neural network based methods
-\citep{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN}. We build on top of this work on Semantic Parsing, and describe a type driven neural semantic 
-parsing framework in Chapter~\ref{chapter:nnsp}.
+$\textbf{K}_p$ inputs allow the prediction step to reason using additional contextual knowledge. $\textbf{K}_p$ can either be structured or unstructured. In cases where the prediction component
+needs to learn to perform a sequence of operations (or a program), to arrive at the required output, the prediction becomes a Semantic Parsing problem.
+The contexts are often structured in this case. There exist both traditional \citep[among others]{Zelle1996LearningTP,Zettlemoyer2005LearningTM,zettlemoyer2007online} and neural network based methods
+\citep{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN} for solving these problems. 
+In this thesis, we build on top of this work on Semantic Parsing, and describe a type driven neural semantic 
+parsing framework in Chapter~\ref{chapter:nnsp}, where we assume only weak supervision in the form of question answer pairs, and not the programs.
 
-Machine reading comprehension also involves reasoning over contexts, but unstructured ones. This task typically involves encoding some context given as a paragraph and using it to
+Machine reading comprehension typically involves encoding some context given as a paragraph and using it to
 produce an answer from an encoded question. Examples of task targeted datasets built to evaluate that capability include MCTest \citep{Richardson2013MCTestAC},
 CNN/Daily Mail dataset \citep{hermann2015teaching}, SQuAD \citep{Rajpurkar2016SQuAD10} and TriviQA \citep{Joshi2017TriviaQAAL}, among others.
 Systems built for these tasks including attentive readers \citep{hermann2015teaching}, variants of memory networks \citep{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN}
@@ -194,18 +207,18 @@ In Chapter~\ref{chapter:memnet_qa}, we describe a generic formulation of the pro
 %TODO: Challenges with using selectional preferences
 
 Adding external knowledge inputs to NLU systems is not straightforward.  Firstly, while linking text being read to some structured background knowledge
-in a KB, an automated system faces ambiguity. For example, with lexical ontologies like WordNet, 
+in a KB, an automated system usually faces considerable ambiguity. For example, with lexical ontologies like WordNet, 
 we get useful type hierarchies like \textit{parent is-a ancestor is-a person} and \textit{pool is-a body-of-water} 
 and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, the fact that the two sources of semantic information are fundamentally different 
 makes this challenging. While distributional approaches encode meaning in a
-continuous and an abstract fashion, meaning in KBs is symbolic and discrete. Chapter~\ref{chapter:ontolstm} is dedicated to learning 
+continuous and abstract fashion, meaning in KBs is usually symbolic and discrete. Chapter~\ref{chapter:ontolstm} is dedicated to learning 
 distributions over the discrete concepts of the KB conditioned on the context, to deal with exceptions in language.
 
 %TODO: Chalenges in Semantic Parsing
 
 When reasoning in the presence of context, finding the 
 relevant parts of the provided information given the text being processed is a challenge. 
-The goal of this thesis is to find the limitations of various knowledge sources -- structured and unstructured -- and use this information 
+The goal of this thesis is to find the limitations of various knowledge sources --- structured and unstructured --- and use this information 
 to build hybrid NLU systems that can successfully incorporate real world knowledge in deep learning models. We now describe how this thesis is organized.
 
 \section{Thesis Outline}
@@ -222,15 +235,15 @@ of the pipeline.
 In Chapter~\ref{chapter:nem} we encode events as predicate argument structures derived from a semantic role labeler.
 In this chapter, we rely on selectional preferences between verbs and their semantic role fillers as the background
 knowledge, and show how they are useful in predicting anomalous events.
-Our event encoder, Neural Event Model (NEM) captures semantics deeper than surface fluency. We describe an annotation effort that
+Our event encoder, Neural Event Model (NEM) captures semantics deeper than the surface-level fluency. We describe an annotation effort that
 resulted in newswire headlines manually labeled with the degree of surprise associated with them and show that NEM outperforms
 a baseline LSTM model that encodes sentences at anomaly detection. 
 
 In Chapter~\ref{chapter:ontolstm}, we describe a method to incorporate implicit knowledge
-from WordNet, towards obtaining better sentence representations. Our model looks at WordNet synsets,
-and at the hypernym hierarchies of the words being processed so that the 
-encoder is aware of their different senses, and the corresponding type information.
-The ontology aware LSTM (OntoLSTM) learns to attend to the appropriate sense,
+from WordNet towards obtaining better sentence representations. Our model looks at WordNet synsets
+and at the hypernym hierarchies of the words being processed, making the 
+encoder aware of their different senses and the corresponding type information.
+The ontology-aware LSTM (OntoLSTM) learns to attend to the appropriate sense,
 and the relevant type 
 (either the most specific concept or a generalization by choosing a hypernym of
 the word), conditioned on the context and the end-objective. We show that the sentence representations 
@@ -240,16 +253,17 @@ of words in the input sentences and show that OntoLSTM is indeed learning useful
 that help the learned representations perform better at the end task.
 
 Chapter~\ref{chapter:nnsp} deals with reasoning over semi-structured contexts. We describe a type-driven
-neural semantic parser aimed at answering compositional questions on Wikipedia tables. It is an encoder-decoder model that generates
+neural semantic parser aimed at answering compositional questions about Wikipedia tables. It is an encoder-decoder model that generates
 well-typed logical forms that can be executed against graph representations of the tables in context. The parser also includes entity embedding
 and linking modules that are trained jointly using QA supervision. This parser achieves state-of-the art result on \textsc{WikiTableQuestions} dataset.
 Proposed work includes improving the entity linking module, and applying this parser to QA in other domains.
 
-The focus of Chapter~\ref{chapter:memnet_qa} is on context retrieval methods for neural network models with explicit memory components.
+The focus of Chapter~\ref{chapter:memnet_qa} is context retrieval methods for neural network models with explicit memory components.
 We start by describing a generalized deep learning architecture for reasoning over unstructured contexts. The pipeline follows the generic
 specification in Section~\ref{sec:intro_external_knowledge} and has configurable components
-for encoding and prediction. We identify that the memory network models in \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN}
-and the attentive reader model from \cite{hermann2015teaching} are specific instantiations of our generic knowledge guided reasoning model.
+for encoding and prediction. We identify that the memory network models in \cite{weston2014memory,Sukhbaatar2015EndToEndMN,Xiong2016DynamicMN},
+the attentive reader model from \cite{hermann2015teaching}, and the Gated Attention Reader from \cite{dhingra2016gated} are specific instantiations
+of our generic knowledge guided reasoning model.
 Unlike prior work that evaluated these models on tasks where the contexts are limited and well-defined, we deal with tasks that require
 retrieving relevant context from large corpora. Our preliminary experiments show that the choice of retrieval methods greatly affect the
 final QA results. Based on this insight, we propose to build models where retrieval is tightly integrated in the QA pipeline.

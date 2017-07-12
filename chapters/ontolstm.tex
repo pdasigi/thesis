@@ -1,8 +1,25 @@
-In this chapter, we describe augmenting encoders with the kind of background
-knowledge that is available in external knowledge sources.
+\section{Introduction}
+As described in Chapter~\ref{chapter:introduction}, the utterances provided as input to
+an NLU system do not contain all the information needed to fully comprehend them, and an
+important missing piece is the common-sense information that humans usually leave out for
+the sake of brevity. In this chapter, we show how we can leverage knowledge-bases to encode
+this missing information. As opposed to the model described in Chapter~\ref{chapter:nem},
+the one described here assumes we have the background knowledge explicitly present in a
+symbolic knowledge base.
 
-The model shown here is one specific kind of knowledge augmented encoder. It is an
-ontology-aware recurrent neural network, an encoder that computes token level 
+The model shown here is one specific kind of knowledge augmented encoder. We 
+restrict ourselves to lexical background knowledge here, specifically of the kind that
+specifies sense and conceptual information of words. We use WordNet \citep{miller1995wordnet}
+to obtain this information. For example, WordNet contains the information that the word
+\textit{bugle} as a noun has three senses, one of which is a brass instrument and another
+is a type of herb. It also shows that \textit{clarion}, \textit{trombone}, \textit{French horn} etc.
+are also types of brass instruments. Clearly, when the word is used in an utterance, all this information
+is omitted because the reader is expected to know a lot of it, or atleast be able to infer it from
+the context. However, this is not true in the case of computational systems that process human language.
+The goal of this chapter is to develop a model of computational model of language that incorporates 
+information from WordNet to obtain better word representations.
+
+Our model is an ontology-aware recurrent neural network, an encoder that computes token level 
 word representations grounded in an ontology (Wordnet).
 The kind of background knowledge we deal with here is that of various senses of
 words, and the generalizations of the concepts that correspond to each sense.
@@ -10,7 +27,13 @@ We encode that information by using Wordnet to find the
 collection of semantic concepts manifested by a word type, and represent a word 
 type as a collection of concept embeddings. We show
 how to integrate the proposed ontology-aware lexical representation with 
-recurrent neural networks (RNNs) to model token sequences.
+recurrent neural networks (RNNs) to model token sequences. Section~\ref{sec:ontolstm_pp_experiments}
+and Section~\ref{sec:ontolstm_snli_results} provide empirical evidence that
+the WordNet-augmented representations encode lexical background knowledge useful for
+two tasks that require semantic understanding: predicting prepositional phrase attachment
+and textual entailment.
+
+%TODO: Describe other kinds of knowledge sources as well: Freebase, ConceptNet?
 
 \section{Ontology-Aware Token Embeddings}
 \paragraph{Types vs. Tokens} In accordance with standard terminology, we make
@@ -18,8 +41,8 @@ the following distinction
 between types and tokens in this chapter: By word types, we mean the surface form 
 of the word, whereas by tokens we mean the instantiation of the surface form in 
 a context. For example, the same word type \textit{`pool'} occurs as two 
-different tokens in the sentences \textit{``He sat by the pool,''} and 
-\textit{``He played a game of pool.''}
+different tokens in the sentences \textit{``He sat by the pool.''} and 
+\textit{``He swam in the pool.''}
 
 Type-level word embeddings map a word type (i.e., a surface form) to a dense 
 vector of real numbers such that similar word types have similar embeddings. 
@@ -28,9 +51,10 @@ mechanism for generalizing statistical models to words which do not appear in
 the labeled training data for a downstream task. Most word embedding models 
 define a single vector for each word type. However, a 
 fundamental flaw in this design is their inability to distinguish between 
-different meanings and abstractions of the same word. In the two sentences shown 
-above, the word \textit{`pool'} has different meanings, but the same 
-representation is typically used for both of them. Similarly, the fact that 
+different meanings and abstractions of the same word. For example,
+\textit{pool} has a different sense in the sentence \textit{``He played a game of pool.''},
+compared to the two examples shown above, but type-level word embeddings typically
+assign the same representation for all three of them. Similarly, the fact that 
 \textit{`pool'} and \textit{`lake'} are both kinds of water bodies is not 
 explicitly incorporated in most type-level embeddings.
 Furthermore, it has become a standard practice to tune pre-trained word 
@@ -93,12 +117,12 @@ This work is related to various lines of research within the NLP community: deal
 \subsection{Multi-prototype Word Vectors}
 The need for going beyond a single vector per word-type has been well established for a while, and many efforts were focused on building multi-prototype vector space models of meaning \cite[][etc.]{reisinger2010multi,huang2012improving,chen2014unified,jauhar:15,neelakantan2015efficient,arora2016linear}. However, the target of all these approaches is obtaining multi-sense word vector spaces, either by incorporating sense tagged information or other kinds of external context. The number of vectors learned is still fixed, based on the preset number of senses. In contrast, our focus is on learning a context dependent distribution over those concept representations. Other work not necessarily related to multi-sense vectors, but still related to our work includes \cite{belanger:15}'s work which proposed a Gaussian linear dynamical system for estimating token-level word embeddings, and \cite{Vilnis2014WordRV}'s work which proposed mapping each word type to a density instead of a point in a space to account for uncertainty in meaning. These approaches do not make use of lexical ontologies and are not amenable for joint training with a downstream NLP task. 
 
-Related to the idea of concept embeddings is \cite{rothe:15} who estimated WordNet synset representations, given pre-trained type-level word embeddings.
+Related to the idea of concept embeddings is the work by \cite{rothe:15}, which estimated WordNet synset representations, given pre-trained type-level word embeddings.
 In contrast, our work focuses on estimating token-level word embeddings as context sensitive distributions of concept embeddings.
 
 \subsection{Hybrid Models of Knowledge-based and Distributional Semantics}
-There is a large body of work that tried to improve word embeddings using external resources. \cite{yu:14} extended the CBOW model \cite{mikolov:13} by adding an extra term in the training objective for generating words conditioned on similar words according to a lexicon.
-\cite{jauhar:15} extended the skipgram model \cite{mikolov:13} by representing word senses as latent variables in the generation process, and used a structured prior based on the ontology.
+There is a large body of work that tried to improve word embeddings using external resources. \cite{yu:14} extended the CBOW model \citep{mikolov:13} by adding an extra term in the training objective for generating words conditioned on similar words according to a lexicon.
+\cite{jauhar:15} extended the skipgram model \citep{mikolov:13} by representing word senses as latent variables in the generation process, and used a structured prior based on the ontology.
 \cite{faruqui:15} used belief propagation to update pre-trained word embeddings on a graph that encodes lexical relationships in the ontology.
 Similarly, \cite{johansson2015embedding} improved word embeddings by representing each sense of the word in a way that reflects the topology of the semantic network they belong to, and then representing the words as convex combinations of their senses.
 In contrast to previous work that was aimed at improving \textit{type level} word representations, we propose an approach for obtaining \textit{context-sensitive} embeddings at the \textit{token level}, while jointly optimizing the model parameters for the NLP task of interest.
@@ -169,7 +193,7 @@ such that
 \sum_{s \in \textit{Senses}(w_i)} \sum_{s' \in \textit{Hypernyms}(s)} p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) = 1
 \nonumber \end{equation}
 
-The distribution which governs the expectation over synset embeddings factorizes into two components:
+The distribution that governs the expectation over synset embeddings factorizes into two components:
 \begin{align}
 p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) \propto& 
 \lambda_{w_i} \exp^{-\lambda_{w_i} \  \textit{rank}(s, w_i)} \times \nonumber \\
@@ -433,6 +457,7 @@ training data, using ADAM \citep{kingma2014adam} with early stopping (up to
 twenty epochs).
 
 \subsection{Experiments}
+\label{sec:ontolstm_snli_results}
 Table~\ref{tab:ontolstm_snli_results} shows the classification results. We also 
 report previously published results of a similar neural architecture as an extra 
 baseline: the 300-dimensional LSTM RNN encoder model in 

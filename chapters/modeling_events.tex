@@ -1,23 +1,26 @@
-In this chapter, we describe a system that models implicit knowledge by exploiting the structure
-in inputs. Our approach relies on the co-occurrence of fillers of slots given by the structure to
-capture this knowledge. This notion was referred to as Selectional Preference \citep{wilks1973preference}
-in earlier literature (see Section~\ref{sec:nem_background} for more information). While this notion was earlier
+\section{Introduction}
+In this chapter, we describe a system that models background knowledge by exploiting the structure
+in inputs. As described in Chapter~\ref{chapter:introduction}, our goal is to fill the gaps in the input utterances
+by explicitly encoding commonsense information, which is usually omitted by humans. Here, we do not rely on external
+sources of knowledge, but instead exploit the information provided by co-occurrence of fillers of slots given by the structure to
+capture this knowledge. This notion was called Selectional Preference \citep{wilks1973preference}
+in earlier literature (see Section~\ref{sec:nem_background} for more information). While this notion was initially
 restricted to verbs and their arguments in dependency structures, we hypothesize that it extends to
 other kinds of structures as well, and consequently, it can be used for modeling appropriate implicit semantic knowledge.
 
-This chapter shows one instantiation of implicit knowledge, and we select the appropriate structures to model selectional
-preferences in. The task presented here is that of differentiating between normal news headlines and strange or weird ones,
+This chapter shows one instantiation of background knowledge. In it, we select the appropriate structures to model selectional
+preferences. The task presented here is that of differentiating between normal news headlines and strange or weird ones,
 and the implicit knowledge required for this task is fundamental to understanding events. Hence, we obtain the structured
 representations of the input utterances from a Semantic Role Labeler, a tool which identifies the eventive predicate in a given
 input sentence, and its corresponding role fillers.
 
 \section{Understanding Events}
-Events are fundamental linguistic elements in human speech. Thus understanding 
+Events are fundamental linguistic elements in human language. Thus understanding 
 events is a fundamental prerequisite for deeper semantic 
 analysis of language, and any computational system of human language should
 have a model of events. One can view an event as an occurrence of a certain 
 action caused
-by an agent, affecting a patient at a certain time and place and so on. It is 
+by an agent, affecting a patient at a certain time and place. It is 
 the combination of the entities
 filling the said roles that define an event. Furthermore, certain combinations 
 of these role fillers
@@ -49,8 +52,8 @@ differentiate between normal and anomalous events.  Hence we hypothesize that
 \emph{anomaly is a result of unexpected or 
 unusual combination of semantic role fillers}.
 
-In this chapter, we introduce the problem of automatic anomalous event
-detection and propose a novel event model that can learn to differentiate
+In this chapter, we introduce the problem of automatic detection of anomalous events
+and propose a novel event model that can learn to differentiate
 between normal
 and anomalous events. We generally define anomalous events as those that are
 unusual compared
@@ -78,8 +81,8 @@ For example, in \textit{Terrorist attacks on the World Trade Center..},
 \textit{attacks} is not a verb but is still an 
 action word.}, and $\textbf{A}$ is the set of its semantic arguments like agent,
 patient, time, location, so on. Our aim
-is to obtain a vector representation of the event that is composed from
-representations of individual words, while explicitly guided by the semantic
+is to obtain a representation of the event that is composed from
+those of individual words, while explicitly guided by the semantic
 role structure. This representation can be understood as an embedding of the
 event in an event space. 
 
@@ -131,7 +134,7 @@ preferences by minimizing the length tree cut through
 the noun hierarchy.  \cite{ciaramita2000explaining} encode the hierarchy as a 
 Bayesian network and learn selectional preferences using probabilistic graphical 
 methods.
-\cite{rooth1999inducing} take a distributional approach, and use latent variable 
+\cite{rooth1999inducing} adopt a distributional approach, and use latent variable 
 models to induce classes of noun-verb pairs, and thus learn their preferences.  
 Methods by \cite{erk2007simple,erk2010flexible}
 are also distributional, and have been described earlier in this paper.  
@@ -163,129 +166,6 @@ other role fillers.
 % \citep{hochreiter1997long} cells. We describe the relevant technical details here.
 % RNNs, as opposed to feed-forward neural networks are networks with loops in them
 
-\section{Data}
-We crawl 3684 ``weird news'' headlines available publicly 
-on the website of NBC
-news\footnote{\url{
-http://www.nbcnews.com/html/msnbc/3027113/3032524/4429950/4429950_1.html}}, 
-such as the following: 
-\begin{itemize}
- \item[] \textit{India weaponizes world's hottest chili.}
- \item[] \textit{Man recovering after being shot by his dog.}
- \item[] \textit{Thai snake charmer puckers up to 19 cobras.}
-\end{itemize}
-We assume that the events extracted from this source, called NBC Weird Events
-(NWE) henceforth, are
-anomalous for training.  NWE contains 4271 events extracted using 
-SENNA's SRL.  We use 3771 of those events as our negative training data. 
-Similarly, we extract events also from
-headlines in the AFE section of Gigaword, called Gigaword Events (GWE)
-henceforth.  We assume these events are normal.
-To use as positive examples for training event composition, we sample roughly
-the same number of events from 
-GWE as our negative examples from NWE. From the two sets, we uniformly sample 
-1003 events
-as the test set and validate the labels by getting crowd-sourced annotations.
-
-\subsection{Annotation}
-\label{sec:nem_annot}
-We post the annotation of the test set containing 1003 events as
-Human Intelligence Tasks (HIT) on Amazon Mechanical Turk (AMT).
-We break the task into 20 HITs and ask the workers to select one of the 
-four options - \textit{highly unusual}, \textit{strange}, \textit{normal} and 
-\textit{cannot say} for each event.  We ask them to select \textit{highly
-unusual} when the 
-event seems too strange to be true, \textit{strange} if it seems unusual but 
-still plausible, and \textit{cannot say} only if the information present in the 
-event is not sufficient to make a decision.  We publicly release this set of 
-1003
-annotated events for evaluating future research.
-
-\begin{table}
-\begin{center}
-  \begin{tabular}[c]{|c|c|}
- \hline
-  Total number of annotators & 22\\
-  \hline
-  \textit{Normal} annotations & 56.3\% \\
-  \hline
-  \textit{Strange} annotations & 28.6\% \\
-  \hline
-  \textit{Highly unusual} annotations & 10.3\% \\
-  \hline
-  \textit{Cannot Say} annotations & 4.8\% \\
-  \hline
-  Avg. events annotated per worker & 344 \\
-  \hline
-  4-way Inter annotator agreement ($\alpha$) & 0.34 \\
-  \hline
-  3-way Inter annotator agreement ($\alpha$) & 0.56 \\
-  \hline
-  \end{tabular}
-\end{center}
- \caption{Annotation Statistics}
- \label{table:annot}
-\end{table}
-Table~\ref{table:annot} shows some statistics of the annotation task.  We
-compute the Inter Annotator
-Agreement (IAA) in terms of Kripendorff's alpha \citep{krippendorff1980content}. 
-The advantage of using this
-measure instead of the more popular Kappa is that the former can deal with
-missing information, which is the case with
-our task since annotators work on different overlapping subsets of the test set.
- The 4-way IAA shown in the table 
-corresponds to agreement over the original 4-way decision (including
-\textit{cannot say}' while the 3-way IAA is measured after merging the 
-\textit{highly unusual} and \textit{strange} decisions.  
-
-Additionally we use
-MACE \citep{hovy2013learning} to assess the quality of 
-annotation.  MACE models the annotation task as a generative process of
-producing the observed labels conditioned on the 
-true labels and the competence of the annotators, and predicts both the latent
-variables.  The average of competence of annotators, 
-a value that ranges from 0 to 1, for our task is 0.49 for the 4-way decision and
-0.59 for the 3-way decision.  
-
-We generate
-true label predictions produced by MACE, discard the events for which the
-prediction remains to be \textit{cannot say}, and use the 
-rest as the final labeled test set.  This leaves 949 events as our test dataset,
-of which only 41\% of the labels are \textit{strange} or \textit{highly
-unusual}.  It has to be noted that even though our test set 
-has equal size samples from both NWE and GWE, the true distribution is not
-uniform.
-
-\subsection{Language Model Separability}
-Given the annotations, we test to see if the
-sentences corresponding to anomalous events can be separated from normal events 
-by simpler 
-features.  We build a n-gram language model from the training data set used for 
-argument composition and 
-measure the perplexity of the sentences in the test set.  
-Figure~\ref{fig:nem_lm_ppl} shows
-a comparison of the perplexity scores for different labels. If the n-gram 
-features are enough 
-to separate different classes of sentences, one would expect the sentences 
-corresponding to 
-\textit{strange} and \textit{highly unusual} labels to have higher perplexity 
-ranges than \textit{normal}
-sentences, because the language model is built from a dataset that is expected 
-to have a distribution of
-sentences where majority of them contain normal events.  As it can be seen in 
-Figure~\ref{fig:nem_lm_ppl}, 
-except for a few outliers, most data points in all the categories are in similar 
-perplexity ranges.
-Hence, sentences with different labels cannot be separated based on an n-gram 
-language model features.
-
-\begin{figure}
-  \begin{center}
-  \includegraphics[width=4in]{figures/perplexity-comparison.png}
-  \caption{Comparison of perplexity scores for different labels}
-  \label{fig:nem_lm_ppl}
-  \end{center}
-\end{figure}
 
 \section{Model for Semantic Anomaly Detection}
 Neural Event Model (NEM) is a supervised model that learns to differentiate between anomalous and
@@ -365,6 +245,129 @@ We optimize this objective using ADAM \citep{kingma2014adam}. The model is imple
 using Keras \citep{chollet2015keras}. Note that the model described here is an extension of the one described in our previously published paper \citep{dasigi2014modeling}.
 The main improvements here include using an LSTM-RNN as the encoder in argument composition instead of a simple RNN, and jointly training argument composition, event composition and anomaly classification,
 whereas the older model included training argument composition separately using an unsupervised objective.
+
+\section{Data}
+We crawl 3684 ``weird news'' headlines available publicly 
+on the website of NBC
+news\footnote{\url{
+http://www.nbcnews.com/html/msnbc/3027113/3032524/4429950/4429950_1.html}}, 
+such as the following: 
+\begin{itemize}
+ \item[] \textit{India weaponizes world's hottest chili.}
+ \item[] \textit{Man recovering after being shot by his dog.}
+ \item[] \textit{Thai snake charmer puckers up to 19 cobras.}
+\end{itemize}
+For training, we assume that the events extracted from this source, called NBC Weird Events
+(NWE) henceforth, are anomalous.  NWE contains 4271 events extracted using 
+SENNA's \citep{collobert2011natural} SRL.  We use 3771 of those events as our negative training data. 
+Similarly, we extract events also from
+headlines in the AFE section of Gigaword, called Gigaword Events (GWE)
+henceforth.  We assume these events are normal.
+To use as positive examples for training event composition, we sample roughly
+the same number of events from 
+GWE as our negative examples from NWE. From the two sets, we uniformly sample 
+1003 events
+as the test set and validate the labels by getting crowd-sourced annotations.
+
+\subsection{Annotation}
+\label{sec:nem_annot}
+We post the annotation of the test set containing 1003 events as
+Human Intelligence Tasks (HIT) on Amazon Mechanical Turk (AMT).
+We break the task into 20 HITs and ask the workers to select one of the 
+four options: \textit{highly unusual}, \textit{strange}, \textit{normal}, and 
+\textit{cannot say} for each event.  We ask them to select \textit{highly
+unusual} when the 
+event seems too strange to be true, \textit{strange} if it seems unusual but 
+still plausible, and \textit{cannot say} only if the information present in the 
+event is not sufficient to make a decision.  We publicly release this set of 
+1003
+annotated events for evaluating future research.
+
+\begin{table}
+\begin{center}
+  \begin{tabular}[c]{|c|c|}
+ \hline
+  Total number of annotators & 22\\
+  \hline
+  \textit{Normal} annotations & 56.3\% \\
+  \hline
+  \textit{Strange} annotations & 28.6\% \\
+  \hline
+  \textit{Highly unusual} annotations & 10.3\% \\
+  \hline
+  \textit{Cannot Say} annotations & 4.8\% \\
+  \hline
+  Avg. events annotated per worker & 344 \\
+  \hline
+  4-way Inter annotator agreement ($\alpha$) & 0.34 \\
+  \hline
+  3-way Inter annotator agreement ($\alpha$) & 0.56 \\
+  \hline
+  \end{tabular}
+\end{center}
+ \caption{Annotation Statistics}
+ \label{table:annot}
+\end{table}
+Table~\ref{table:annot} shows some statistics of the annotation task.  We
+compute the Inter-Annotator
+Agreement (IAA) in terms of Kripendorff's alpha \citep{krippendorff1980content}. 
+The advantage of using this
+measure instead of the more popular Kappa is that the former can deal with
+missing information, which is the case with
+our task since annotators work on different overlapping subsets of the test set.
+ The 4-way IAA shown in the table 
+corresponds to agreement over the original 4-way decision (including
+\textit{cannot say}' while the 3-way IAA is measured after merging the 
+\textit{highly unusual} and \textit{strange} decisions.  
+
+Additionally we use
+MACE \citep{hovy2013learning} to assess the quality of 
+annotation.  MACE models the annotation task as a generative process of
+producing the observed labels conditioned on the 
+true labels and the competence of the annotators, and predicts both the latent
+variables.  The average of competence of annotators, 
+a value that ranges from 0 to 1, for our task is 0.49 for the 4-way decision and
+0.59 for the 3-way decision.  
+
+We generate
+true label predictions produced by MACE, discard the events for which the
+prediction remains to be \textit{cannot say}, and use the 
+rest as the final labeled test set.  This leaves 949 events as our test dataset,
+of which only 41\% of the labels are \textit{strange} or \textit{highly
+unusual}.  It has to be noted that even though our test set 
+has equal size samples from both NWE and GWE, the true distribution is not
+uniform.
+
+\subsection{Language Model Separability}
+Given the annotations, we test to see if the
+sentences corresponding to anomalous events can be separated from normal events 
+by simpler 
+features.  We build an n-gram language model from the training data set used for 
+argument composition and 
+measure the perplexity of the sentences in the test set.  
+Figure~\ref{fig:nem_lm_ppl} shows
+a comparison of the perplexity scores for different labels. If the n-gram 
+features are enough 
+to separate different classes of sentences, one would expect the sentences 
+corresponding to 
+\textit{strange} and \textit{highly unusual} labels to have higher perplexity 
+ranges than \textit{normal}
+sentences, because the language model is built from a dataset that is expected 
+to have a distribution of
+sentences where majority of them contain normal events.  As can be seen in 
+Figure~\ref{fig:nem_lm_ppl}, 
+except for a few outliers, most data points in all the categories are in similar 
+perplexity ranges.
+Hence, sentences with different labels cannot be separated based on an n-gram 
+language model features.
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[width=4in]{figures/perplexity-comparison.png}
+  \caption{Comparison of perplexity scores for different labels}
+  \label{fig:nem_lm_ppl}
+  \end{center}
+\end{figure}
 
 \section{Results}
 We merged the two anomaly classes (strange and highly unusual) and calculated accuracy and F-score (for the anomaly class) of the binary

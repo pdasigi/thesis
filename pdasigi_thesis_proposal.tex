@@ -96,12 +96,11 @@ Luke Zettlemoyer
 %% into different files and input them into this file...
 
 \begin{abstract}
-Natural Language Understanding (NLU) systems need to encode, and reason over human generated text (or speech) at a deep semantic level.
+Natural Language Understanding (NLU) systems need to encode human generated text (or speech) and reason over it at a deep semantic level.
 Any NLU system typically involves two main components: The first is an \textbf{encoder}, which composes words (or other basic linguistic units) within the input utterances compute encoded representations, 
-which are then used as features in the second component, a \textbf{predictor}, to produce the desired output. In this thesis, we argue that the utterances themselves,
-do not contain all the information needed for understanding them, and identify two kinds of additional knowledge needed to fill the gaps: 
-\textbf{background knowledge} is that which is not explicitly stated in the utterances for the sake of brevity, and \textbf{contextual knowledge}
-is that which is only provided by the context in which the utterance occurs. The goal of this thesis is to build end-to-end NLU systems that encode inputs along with relevant
+which are then used as features in the second component, a \textbf{predictor}, to reason over the encoded inputs and produce the desired output. We argue that the utterances themselves
+do not contain all the information needed for understanding them and identify two kinds of additional knowledge needed to fill the gaps: 
+\textbf{background knowledge} and \textbf{contextual knowledge}. The goal of this thesis is to build end-to-end NLU systems that encode inputs along with relevant
 background knowledge, and reason about them in the presence of contextual knowledge.
 
 The first part of the thesis deals with background knowledge. While distributional methods for encoding inputs have been

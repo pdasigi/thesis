@@ -69,7 +69,7 @@ $\mathbf{o}$ are categorical labels indicating the sentiment or entailment respe
 Equation~\ref{eq:generic_encoding} used to be a mapping of the inputs to a hand designed feature space, typically containing patterns over word classes based on
 part-of-speech \citep{corley2005measuring} or Wordnet synsets \citep{moldovan2001logic}; shallow linguistic features like dependencies \citep{bos2005recognising};
 named entity information \citep{tatu2005semantic}; or other features depending on the task. The choice of features was left to the discretion of the ML-practitioners
-designing the NLU systems. In such systems, the modeling emphasis was more on the prediction component, and the encoding component did not involve any learning. 
+designing the NLU systems. In such systems, the modeling emphasis was more on the reasoning component, and the encoding component did not involve any learning. 
 More recent systems \citep[among many others]{bahdanau:14,weston2014memory,hermann2015teaching,Xiong2016DynamicMN,bowman2016fast,yang:16} 
 use representation learning or deep learning techniques to also learn the parameters of the
 $\mathtt{encode}$ function, and typically this is done jointly with learning the parameters of the $\mathtt{reason}$ function, to ensure that learned representations are relevant to the task.
@@ -98,9 +98,14 @@ in isolation. The utterances themselves seldom contain all the information neede
 knowledge about the world humans inherently possess, or is provided by the surrounding context in which the utterance is spoken or written. NLU systems thus
 need to access or infer this knowledge to fully comprehend human language.
 
-In principle, a sophisticated model should be able to infer this knowledge given enough annotated data. However, in practice, it is often difficult to
-get large amounts of high quality annotations for several NLU tasks. Moreover, a model trained for one task may not always transfer to another similar
-task. Given these constraints, it is valuable to study the kinds of knowledge that NLU generally requires, with the goal of determining the following:
+In principle, a sophisticated model should be able to infer this knowledge given enough annotated data. Thus, one might argue that NLU system builders should focus on
+obtaining more data to train fully supervised systems. Our counter-argument to that is based on the practicality of building NLU systems, and is twofold: Firstly, it is
+often difficult to get sufficient high quality labeled data for most NLU tasks in practice. Any additional knowledge that can augment the information provided by the data
+could help build a better model for the task at hand. Secondly, if knowledge about some aspects of semantics that need to be modeled can be easily obtained, it is inefficient
+to not use it, and build a model from scratch hoping that it would learn that knowledge. The modeling capacity could instead be used for capturing more nuanced aspects of semantics
+that the data provide. We will revisit these counter-arguments later in the thesis as we describe concrete tasks.
+
+Given these considerations, it is valuable to study the kinds of knowledge that NLU generally requires, with the goal of determining the following:
 \begin{enumerate}
 \item What knowledge is required to fill in the gaps in the inputs?
 \item How can we acquire the missing knowledge?
@@ -110,7 +115,7 @@ task. Given these constraints, it is valuable to study the kinds of knowledge th
 
 Since our ultimate goal is to improve the performance of NLU systems, we take a pragmatic approach for defining the kinds of knowledge required
 by NLU systems, and further classify them based on our means for acquiring them or ways of incorporating them into NLU system.
-At a high level, we draw a distinction between two kinds of knowledge: background and contextual, the former in relation to encoding input utterances, and the latter in relation to
+At a high level, we draw a distinction between two kinds of knowledge: background and contextual, the former is related to encoding input utterances, and the latter is related to
 reasoning over them. We now describe them in detail.
 
 \subsection{Background Knowledge for Encoding}
@@ -131,8 +136,9 @@ the performance of an NLU system at the task of prepositional-phrase (PP) attach
 A system that does not explicitly have access to this information will at best memorize co-occurrence patterns in the input words.
 Using pre-trained vectors to represent input words provides additional knowledge to the model in the
 form of co-occurrence statistics obtained from large corpora. However, it is unclear whether distributional
-information at the word level alone can generally substitute for the kind of knowledge described above. Fortunately, for knowledge like this, one can leverage the information an ontology like WordNet
-gives. For example, WordNet specifies that \textit{butter} is a \textit{diary product}, and \textit{chopsticks} are \textit{tableware}.
+information at the word level alone can generally substitute for the kind of knowledge described above. Fortunately, for knowledge like this, one can leverage the
+information a lexical ontology like WordNet \citep{miller1995wordnet} gives. For example, WordNet specifies that \textit{butter} is a \textit{diary product}, and
+\textit{chopsticks} are \textit{tableware}.
 
 However, not all background knowledge can be explicitly stated. A large portion of what we call
 commonsense cannot be expressed in the form of concrete relations like in the example above.
@@ -207,7 +213,7 @@ seen in the training data to unseen test cases. Without contextual knowledge, an
 systems will simply not have sufficient information to produce the desired results. We thus modify our NLU equations as follows.
 \begin{align}
  \mathbf{e} &= \mathtt{encode\_with\_background}(\mathbf{I}, \mathbf{K}_e) \label{eq:encoding_with_knowledge}\\
- \mathbf{o} &= \mathtt{reason\_in\_context}(\mathbf{e}, \mathbf{e}_{K_r}) \label{eq:reasoning_with_knowledge}
+	\mathbf{o} &= \mathtt{reason\_in\_context}(\mathbf{e}, \mathbf{K}_r) \label{eq:reasoning_with_knowledge}
 \end{align}
 where $\mathbf{K}_e$ and $\mathbf{K}_r$ represent the knowledge required for encoding and reasoning respectively. They
 come from different sources and augment the NLU systems in different ways.
@@ -222,16 +228,15 @@ context of external knowledge. Both systems used WordNet features and other rela
 built a system based on SNoW \citep{CCRR99} for predicting Prepositional Phrase Attachment,~\cite{moldovan2001logic} built a QA system. In Chapter~\ref{chapter:ontolstm} we describe
 a representation-learning application of knowledge-aware encoding where we show the advantages of incorporating WordNet information in recurrent neural networks for encoding sentences.
 
-Adding external knowledge inputs to NLU systems is not straightforward.  Firstly, while linking text being read to some structured background knowledge
+Adding external knowledge inputs to NLU systems is not straightforward. Firstly, while linking text being read to some structured background knowledge
 in a KB, an automated system usually faces considerable ambiguity. For example, with lexical ontologies like WordNet, 
 we get useful type hierarchies like \textit{parent is-a ancestor is-a person} and \textit{pool is-a body-of-water} 
-and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Moreover, the fact that the two sources of semantic information are fundamentally different 
-makes this challenging. While distributional approaches encode meaning in a
-continuous and abstract fashion, meaning in KBs is usually symbolic and discrete. Chapter~\ref{chapter:ontolstm} focuses on learning 
+and so on, but one has to deal with sense ambiguity: \textit{pool} can also be a game. Another challenge stems from the fact that most KBs represent meaning in a symbolic fasion,
+whereas most modern NLU systems are based on neural network models, and represent textual inputs in a continuous space. Chapter~\ref{chapter:ontolstm} focuses on learning 
 distributions over the discrete concepts of the KB conditioned on the context, to deal with exceptions in language.
 
 Explicit sources of knowledge are often incomplete, or may not contain the kind of knowledge needed to fill the gaps to obtain representations need for the task at hand. 
-An alternative source of background knowledge is a model of selectional preferences \citep{wilks1973preference}, given an appropriate structured representation of the inputs.
+An alternative source of background knowledge is the co-occurrence of slot-fillers, given an appropriate structured representation of the inputs:
 Assuming we have correctly identified the structure within the inputs, we can leverage large corpora to obtain expected semantics of the fillers of the roles of
 defined by the structure, and use those expectations to judge the given inputs.
 This idea is very similar to Selectional Preference, the notion that a verb places semantic
@@ -252,17 +257,17 @@ those that correspond to the sequence of operations that result in the correct a
 In that case, contextual knowledge about the restrictions of the logical form space can be used to constrain the search process, \citep{xiao2016sequence,krishnamurthy2017neural},
 thus making reasoning more efficient.
 
-In the example shown in Figure~\ref{fig:wikitables_example}, the supervision comes only from the answers. This can be used to drive the search process, since the requirement that the resulting
-logical form should evaluate to the given answer restricts the search space to a large extent.
-However,  Since the answer is binary, it does not restrict the search space to a large extent. In fact, given a space of valid logical forms, exactly 50\% of them evaluate
-to the given answer, but only a minute proportion of them are true translations of the given sentence.
-In this case, when supervison provided is weaker, we have to rely more on contextual knowledge
-to ensure that the produced logical form involves reasoning relevant to the input sentence.
+In the example shown in Figure~\ref{fig:wikitables_example}, the supervision comes only from the answers. This can be used to drive the search process, since the
+requirement that the resulting logical form should evaluate to the given answer restricts the search space to a large extent.
+Figure~\ref{fig:nlvr_example_intro} also shows an example where the supervision comes only from the answers. However, since the answers are binary, they do not restrict the
+search space as much. In fact, given a space of valid logical forms, exactly 50\% of them evaluate to the given answer, but only a minute proportion of them are true translations
+of the given sentence. In this case, when supervison provided is weaker, we have to rely more on contextual knowledge to ensure that the produced logical form involves reasoning
+relevant to the input sentence.
 
 In this thesis, we first describe a type driven neural semantic parsing framework in Chapter~\ref{chapter:wikitables}, where we define a concrete grammar over the space
 of logical forms, and use the constraints from the grammar to drive the search process. We also
 define an entity linking mechanism trained joinly with the parser to allow the parser to reason about
-previously unseen entities. Then, in Chapter~\ref{chapter:nlvr}, we deal with the issue of weaker supervision from binarly labels. The contextual knowledge
+previously unseen entities. Then, in Chapter~\ref{chapter:nlvr}, we deal with the issue of weaker supervision from binary labels. The contextual knowledge
 in this case is a compositional logical form language we define, where the functions are easily mappable to natural language utterances. We exploit the properties of this language to
 propose a lexicon-guided coverage mechanism that drives the search process towards logical forms that use operations relevant to input utterances.
 We show that this technique is necessary for domains with binary denotations. Additionally, we present an iterative search method, that alternates between searching
@@ -274,10 +279,11 @@ for programs that give correct answers, and maximizing the likelihood of retriev
 
 Chapter~\ref{chapter:background} describes the pre-requisite background for the techniques used in this thesis. We will provide an overview of representation learning techniques, and various ways to train neural semantic parsers.
 
-In Chapter~\ref{chapter:ontolstm}, we describe a method to incorporate implicit knowledge
+In Chapter~\ref{chapter:ontolstm}, we describe a method to incorporate explicit knowledge
 from WordNet towards obtaining better sentence representations. Our model looks at WordNet synsets
 and at the hypernym hierarchies of the words being processed, making the 
-encoder aware of their different senses and the corresponding type information.
+encoder aware of their different senses and the corresponding type information. Concretely, we transform a
+popular variant of recurrent neural-network model, one with Long Short-Term Memory (LSTM) \citep{hochreiter1997long}, to incorporate ontological information.
 The ontology-aware LSTM (OntoLSTM) learns to attend to the appropriate sense,
 and the relevant type 
 (either the most specific concept or a generalization by choosing a hypernym of
@@ -303,4 +309,5 @@ The chapter also includes an iterative search and maximization
 algorithm where we exploit the compositionality of the logical form language to produce increasingly complex logical forms. We show that this
 technique is generally applicable to training semantic parsers with weak supervision, and show state of the art results on NLVR and \textsc{WikiTableQuestions}.
 
-Finally, in Chapter~\ref{chapter:conclusion}, we will describe several potential directions for future research, building on top of the tasks we studied in this thesis, and the kinds of knowledge we exploited.
+Finally, in Chapter~\ref{chapter:conclusion}, we will describe several potential directions for future research, building on top of the tasks we studied in this thesis, and
+the kinds of knowledge we exploited.

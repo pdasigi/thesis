@@ -33,6 +33,7 @@
 \usepackage{bbm}
 \usepackage{multirow}
 \usepackage{enumerate}
+\usepackage{booktabs}
 % \usepackage[numbers,sort]{natbib}
 \usepackage[round]{natbib}
 \usepackage[backref,pageanchor=true,plainpages=false, pdfpagelabels, bookmarks,bookmarksnumbered,
@@ -61,14 +62,13 @@
 %initialize page style, so contents come out right (see bot) -mjz
 \pagestyle{empty}
 
-\title{ {\it \huge Knowledge-Aware\\Natural Language Understanding}}
+\title{{\it \huge Knowledge-Aware\\Natural Language Understanding}}
 \author{Pradeep Dasigi}
 \date{}
 \Year{2018}
 \trnumber{}
 
-\committee{
-Eduard Hovy (Chair) \\
+\committee{Eduard Hovy (Chair) \\
 Chris Dyer \\
 William Cohen \\
 Luke Zettlemoyer
@@ -161,14 +161,20 @@ neural network models with explicit memory components that can adaptively reason
 \label{chapter:background}
 \input{chapters/background}
 \part{Encoding with Background Knowledge}
+\chapter{Related Work}
+\label{chapter:encoding_related_work}
+\input{chapters/encoding_related_work}
 \chapter{Sentence Understanding with Background Knowledge from Ontologies}
 \label{chapter:ontolstm}
 \input{chapters/ontolstm}
-\chapter{Leveraging Selectional Preferences for Event Understanding}
+\chapter{Leveraging Selectional Preferences as Background Knowledge for Event Understanding}
 \label{chapter:nem}
 \input{chapters/modeling_events}
 \part{Reasoning with Contextual Knowledge}
-\chapter{Type-constrained Decoding for Semantic Parsing}
+\chapter{Related Work}
+\label{chapter:reasoning_related_work}
+\input{chapters/reasoning_related_work}
+\chapter{Grammar-Constrained Decoding for Semantic Parsing}
 \label{chapter:wikitables}
 \input{chapters/neural_semantic_parsing}
 \chapter{Iterative Coverage-Guided Search for Semantic Parsing}

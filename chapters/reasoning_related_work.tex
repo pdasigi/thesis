@@ -1,0 +1,18 @@
+In this chapter, we will introduce the problem of semantic parsing, and describe some related work to set the context for our work in Chapters~\ref{chapter:wikitables} and~\ref{chapter:nlvr}.
+
+Semantic parsing is the problem of translating human language into computer language, and therefore is at the heart of natural language understanding.
+A typical semantic parsing task is question answering against a database, which is accomplished by translating questions into executable logical forms (i.e., programs) that output their answers. Semantic parsers vary along a few important dimensions:
+
+\textbf{Formalism} Early work on semantic parsing used lexicalized grammar formalisms such as Combinatory Categorial Grammar \cite{zettlemoyer05,zettlemoyer2007online,kwiatkowski2011lexical,kwiatkowski2013,krishnamurthy2012weakly,artzi2013} and others \cite{liang2011learning,berant2013,zhao2015,wong2006learning,wong2007learning}. These formalisms have the advantage of only generating well-typed logical forms, but the disadvantage of introducing latent syntactic variables that make learning difficult. Another approach is to treat semantic parsing as a machine translation problem, where the logical form is linearized then predicted as an unstructured sequence of tokens \cite{andreas2013}.
+This approach is taken by recent neural semantic parsers \cite{jia2016,dong2016,locascio2016,ling2016}. This approach has the advantage of predicting the logical form directly from the question without latent variables, which simplifies learning, but the disadvantage of ignoring type constraints on logical forms.
+Our type-constrained neural semantic parser inherits the advantages of both approaches: it only generates well-typed logical forms and has no syntactic latent variables as every logical form has a unique derivation. Recent work has explored similar ideas to ours in the context of Python code generation \cite{yin17acl,rabinovich17acl}.
+
+\textbf{Entity Linking} Identifying the entities mentioned in a question is a critical subproblem of semantic parsing in broad domains and proper entity linking can lead to large accuracy improvements \cite{yih2015stagg}.
+However, semantic parsers have typically ignored this problem by assuming that entity linking is done beforehand (as the neural parsers above do) or using a simple parameterization for the entity linking portion (as the lexicalized parsers do). Our parser explicitly includes an entity linking module that enables it to model the highly ambiguous and implicit entity mentions in \textsc{WikiTableQuestions}.
+
+\textbf{Supervision} Semantic parsers can be trained from labeled logical forms \cite{zelle1996,zettlemoyer05} or question-answer pairs \cite{liang2011learning,berant2013}. Question-answer pairs were considered easier to obtain than labeled logical forms, though recent work has demonstrated that logical forms can be collected efficiently and are more effective \cite{yih2016value}. However, a key advantage of question-answer pairs is that they are agnostic to the domain representation and logical form language (e.g., lambda calculus or $\lambda$-DCS). This property is important for problems such as semi-structured tables where the proper domain representation is unclear.
+
+
+\textbf{Data Sets} We use \textsc{WikiTableQuestions} to evaluate our parser as this data set exhibits both a broad domain and complex questions.
+Early data sets, such as \textsc{GeoQuery} \cite{zelle1996} and \textsc{ATIS} \cite{dahl1994}, have small domains with only a handful of different predicates. More recent data sets for question answering against Freebase have a much broader domain, but simple questions \cite{berant2013,cai2013}.
+

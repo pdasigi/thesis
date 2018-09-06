@@ -1,0 +1,93 @@
+Before we describe our approaches for incorporating background knowledge in encoders for Natural Language Understanding, let us first set the context by describing prior work done in this space. Our work is related to various lines of research within the NLP community: dealing with synonymy and homonymy in word representations both in the context of distributed embeddings and more traditional vector spaces; hybrid models of distributional and knowledge based semantics; and selectional preferences and their relation with syntactic and semantic relations.
+
+\section{Multi-prototype Word Vectors}
+The need for going beyond a single vector per word-type has been well established for a while, and many efforts were focused on building multi-prototype vector space models of meaning \cite[][etc.]{reisinger2010multi,huang2012improving,chen2014unified,jauhar:15,neelakantan2015efficient,arora2016linear}. However, the target of all these approaches is obtaining multi-sense word vector spaces, either by incorporating sense tagged information or other kinds of external context. The number of vectors learned is still fixed, based on the preset number of senses. In contrast, our focus is on learning a context dependent distribution over those concept representations. Other work not necessarily related to multi-sense vectors, but still related to our work includes \cite{belanger:15}'s work which proposed a Gaussian linear dynamical system for estimating token-level word embeddings, and \cite{Vilnis2014WordRV}'s work which proposed mapping each word type to a density instead of a point in a space to account for uncertainty in meaning. These approaches do not make use of lexical ontologies and are not amenable for joint training with a downstream NLP task. 
+
+Related to the idea of concept embeddings is the work by \cite{rothe:15}, which estimated WordNet synset representations, given pre-trained type-level word embeddings.
+In contrast, our work focuses on estimating token-level word embeddings as context sensitive distributions of concept embeddings.
+
+\section{Hybrid Models of Knowledge-based and Distributional Semantics}
+There is a large body of work that tried to improve word embeddings using external resources. \cite{yu:14} extended the CBOW model \citep{mikolov:13} by adding an extra term in the training objective for generating words conditioned on similar words according to a lexicon.
+\cite{jauhar:15} extended the skipgram model \citep{mikolov:13} by representing word senses as latent variables in the generation process, and used a structured prior based on the ontology.
+\cite{faruqui:15} used belief propagation to update pre-trained word embeddings on a graph that encodes lexical relationships in the ontology.
+Similarly,~\cite{johansson2015embedding} improved word embeddings by representing each sense of the word in a way that reflects the topology of the semantic network they belong to, and then representing the words as convex combinations of their senses.
+In contrast to previous work that was aimed at improving \textit{type level} word representations, we propose an approach for obtaining \textit{context-sensitive} embeddings at the \textit{token level}, while jointly optimizing the model parameters for the NLP task of interest.
+
+\section{Selectional Preference}
+Selectional preference, a notion introduced by \cite{wilks1973preference}, 
+refers to the paradigm of modeling semantics of
+natural language in terms of the restrictions a verb places on its arguments. 
+For example, the knowledge required to identify
+one of the following sentences as meaningless can be encoded as preferences (or 
+restrictions) of the verb.
+\begin{itemize}
+ \item[] \textit{Man eats pasta.}
+ \item[] \textit{Poetry eats computers.}
+\end{itemize}
+The restrictions include \textit{eat} requiring its subject to be animate, its 
+object to be edible, and so on. Though the
+notion was originally proposed for a verb and its dependents in the context of 
+dependency grammars, it is equally applicable to
+other kinds of semantic relations. In this work,
+we use this idea in the context of verbs and their semantic role fillers.
+
+The idea is that identifying the right sense of the word can be guided by the 
+preferences of the other words it is related to.  \cite{resnik1997selectional}
+illustrates this through the example of disambiguating the sense of the word 
+\textit{letter} in the phrase \textit{write a letter}.
+While \textit{letter} has multiple senses, as an object, the verb \textit{write} 
+``prefers'' the sense closer to \textit{reading matter} more than others.
+At the phrasal level, selectional preferences are useful in encoding complex 
+phenomena like metaphor.  Metaphorical usage of words usually involves violating 
+selectional restrictions.
+For example the phrase \textit{kill an idea} is a metaphor, because 
+\textit{kill} does not usually take abstract concepts as objects.  The phrase 
+itself is common and
+one can easily attribute a metaphorical sense to the verb kill and resolve the 
+violation.  \cite{wilks2007making}, \cite{wilks2007preferential}, 
+\cite{krishnakumaran2007hunting},
+\cite{shutova2013statistical}, among others discuss the selectional preference 
+view of metaphor identification.
+Automatic acquisition of selectional preferences from text is a well studied 
+problem.  \cite{resnik1996selectional} proposed the first broad coverage 
+computational model of selectional preferences.  The approach is based on using 
+WordNet's hierarchy to generalize across words.
+It measures selectional association strength of an triple $(v, r, c)$ with verb 
+$v$, relation $r$ and an argument class $c$ as the Kullback-Leibler divergence 
+between the the distributions $P(c|v, r)$  $c$
+and $P(c|r)$ normalized over all classes of arguments that occur with the $(v, 
+r)$ pair.  \cite{abe1996learning} also use WordNet, and model selectional 
+preferences by minimizing the length tree cut through
+the noun hierarchy.  \cite{ciaramita2000explaining} encode the hierarchy as a 
+Bayesian network and learn selectional preferences using probabilistic graphical 
+methods.
+\cite{rooth1999inducing} adopt a distributional approach, and use latent variable 
+models to induce classes of noun-verb pairs, and thus learn their preferences.  
+Methods by \cite{erk2007simple,erk2010flexible}
+are also distributional, and have been described earlier in this paper.  
+\cite{seaghdha2010latent} proposed the use of Latent Dirichlet Allocation (LDA), 
+to model preferences as topics.  \cite{van2009non} used
+non-negative tensor factorization, and modeled subject-verb-object triples as a 
+three-way tensor.  The tensor is populated with co-occurrence frequencies, and 
+the selectional preferences are measured from decomposed
+representations of the three words in the triple. \cite{van2014neural} trains 
+neural networks to score felicitous triples higher than infelicitous ones.
+
+\cite{erk2010flexible} also model selectional preferences using vector spaces.  
+They measure the 
+goodness of the fit of a noun with a verb in terms of the similarity between the 
+vector of the noun and 
+some ``exemplar'' nouns taken by the verb in the same argument role.  
+\cite{baroni2010distributional} 
+also measure selectional preference similarly, but instead of exemplar nouns, 
+they calculate a 
+prototype vector for that role based on the vectors of the most common nouns 
+occurring in that 
+role for the given verb.  \cite{lenci2011composing} builds on this work and 
+models the phenomenon
+that the expectations of the verb or its role-fillers change dynamically given 
+other role fillers.
+
+\section{WordNet as a source for Selectional Preferences}
+\cite{resnik:93} showed the applicability of semantic classes and selectional preferences to resolving syntactic ambiguity. \cite{Zapirain2013SelectionalPF} applied models of selectional preferences automatically learned from WordNet and distributional information, to the problem of semantic role labeling. \cite{resnik:93,brill1994rule,agirre2008improving} and others have used WordNet information towards improving prepositional phrase attachment predictions.
+

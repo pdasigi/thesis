@@ -4,7 +4,7 @@ in inputs. As described in Chapter~\ref{chapter:introduction}, our goal is to fi
 by explicitly encoding commonsense information, which is usually omitted by humans. Here, we do not rely on external
 sources of knowledge, but instead exploit the information provided by co-occurrence of fillers of slots given by the structure to
 capture this knowledge. This notion was called Selectional Preference \citep{wilks1973preference}
-in earlier literature (see Section~\ref{sec:nem_background} for more information). While this notion was initially
+in earlier literature (see Chapter~\ref{chapter:encoding_related_work} for more information). While this notion was initially
 restricted to verbs and their arguments in dependency structures, we hypothesize that it extends to
 other kinds of structures as well, and consequently, it can be used for modeling appropriate implicit semantic knowledge.
 
@@ -86,87 +86,6 @@ those of individual words, while explicitly guided by the semantic
 role structure. This representation can be understood as an embedding of the
 event in an event space. 
 
-\section{Related Work} \label{sec:nem_background}
-Selectional preference, a notion introduced by \cite{wilks1973preference}, 
-refers to the paradigm of modeling semantics of
-natural language in terms of the restrictions a verb places on its arguments. 
-For example, the knowledge required to identify
-one of the following sentences as meaningless can be encoded as preferences (or 
-restrictions) of the verb.
-\begin{itemize}
- \item[] \textit{Man eats pasta.}
- \item[] \textit{Poetry eats computers.}
-\end{itemize}
-The restrictions include \textit{eat} requiring its subject to be animate, its 
-object to be edible, and so on. Though the
-notion was originally proposed for a verb and its dependents in the context of 
-dependency grammars, it is equally applicable to
-other kinds of semantic relations. In this work,
-we use this idea in the context of verbs and their semantic role fillers.
-
-The idea is that identifying the right sense of the word can be guided by the 
-preferences of the other words it is related to.  \cite{resnik1997selectional}
-illustrates this through the example of disambiguating the sense of the word 
-\textit{letter} in the phrase \textit{write a letter}.
-While \textit{letter} has multiple senses, as an object, the verb \textit{write} 
-``prefers'' the sense closer to \textit{reading matter} more than others.
-At the phrasal level, selectional preferences are useful in encoding complex 
-phenomena like metaphor.  Metaphorical usage of words usually involves violating 
-selectional restrictions.
-For example the phrase \textit{kill an idea} is a metaphor, because 
-\textit{kill} does not usually take abstract concepts as objects.  The phrase 
-itself is common and
-one can easily attribute a metaphorical sense to the verb kill and resolve the 
-violation.  \cite{wilks2007making}, \cite{wilks2007preferential}, 
-\cite{krishnakumaran2007hunting},
-\cite{shutova2013statistical}, among others discuss the selectional preference 
-view of metaphor identification.
-Automatic acquisition of selectional preferences from text is a well studied 
-problem.  \cite{resnik1996selectional} proposed the first broad coverage 
-computational model of selectional preferences.  The approach is based on using 
-WordNet's hierarchy to generalize across words.
-It measures selectional association strength of an triple $(v, r, c)$ with verb 
-$v$, relation $r$ and an argument class $c$ as the Kullback-Leibler divergence 
-between the the distributions $P(c|v, r)$  $c$
-and $P(c|r)$ normalized over all classes of arguments that occur with the $(v, 
-r)$ pair.  \cite{abe1996learning} also use WordNet, and model selectional 
-preferences by minimizing the length tree cut through
-the noun hierarchy.  \cite{ciaramita2000explaining} encode the hierarchy as a 
-Bayesian network and learn selectional preferences using probabilistic graphical 
-methods.
-\cite{rooth1999inducing} adopt a distributional approach, and use latent variable 
-models to induce classes of noun-verb pairs, and thus learn their preferences.  
-Methods by \cite{erk2007simple,erk2010flexible}
-are also distributional, and have been described earlier in this paper.  
-\cite{seaghdha2010latent} proposed the use of Latent Dirichlet Allocation (LDA), 
-to model preferences as topics.  \cite{van2009non} used
-non-negative tensor factorization, and modeled subject-verb-object triples as a 
-three-way tensor.  The tensor is populated with co-occurrence frequencies, and 
-the selectional preferences are measured from decomposed
-representations of the three words in the triple. \cite{van2014neural} trains 
-neural networks to score felicitous triples higher than infelicitous ones.
-
-\cite{erk2010flexible} also model selectional preferences using vector spaces.  
-They measure the 
-goodness of the fit of a noun with a verb in terms of the similarity between the 
-vector of the noun and 
-some ``exemplar'' nouns taken by the verb in the same argument role.  
-\cite{baroni2010distributional} 
-also measure selectional preference similarly, but instead of exemplar nouns, 
-they calculate a 
-prototype vector for that role based on the vectors of the most common nouns 
-occurring in that 
-role for the given verb.  \cite{lenci2011composing} builds on this work and 
-models the phenomenon
-that the expectations of the verb or its role-fillers change dynamically given 
-other role fillers.
-
-% \section{Machine Learning Background} \label{sec:nem_neural_networks}
-% Our model uses Recurrent Neural Networks (RNN) with Long Short-Term Memory (LSTM)
-% \citep{hochreiter1997long} cells. We describe the relevant technical details here.
-% RNNs, as opposed to feed-forward neural networks are networks with loops in them
-
-
 \section{Model for Semantic Anomaly Detection}
 Neural Event Model (NEM) is a supervised model that learns to differentiate between anomalous and
 normal events by 
@@ -175,7 +94,7 @@ classifying dense representations of events, otherwise known as event embeddings
 The event embeddings are computed using a structured composition model
 that represents an event as the composition of the five slot-fillers: \textbf{action},
 \textbf{agent}, \textbf{patient}, \textbf{time} and \textbf{location}.
-Figure~\ref{fig:nem} shows the pipeline for anomalous event detection using NEM. We
+Figure~\ref{fig:nem} shows the pipeline for anomalous event detection using NEM\@. We
 first identify the fillers for the five slots mentioned above, by running a PropBank \citep{palmer2005proposition}
 style Semantic Role Labeler (SRL). We use the following mapping of roles to obtain the event structure:
 \begin{itemize}
@@ -185,7 +104,7 @@ style Semantic Role Labeler (SRL). We use the following mapping of roles to obta
  \item AM-TMP $\rightarrow$ time
  \item AM-LOC $\rightarrow$ location
 \end{itemize}
-This structured input is then passed to NEM. The model has three components:
+This structured input is then passed to NEM\@. The model has three components:
 
 \paragraph{Argument Composition} This component encodes all the role fillers as vectors in the same space.
 This is accomplished by embedding the words in each role filler, and then passing them through a Recurrent
@@ -219,8 +138,7 @@ As it can be seen, the layer projects the event representation into a two-dimens
 \begin{figure}
   \begin{center}
   \includegraphics[width=6.5in]{figures/nem_pipeline.png}
-  \caption{Anomaly Classification Pipeline with Neural Event Model}
-  \label{fig:nem}
+  \caption{Anomaly Classification Pipeline with Neural Event Model}\label{fig:nem}
   \end{center}
 \end{figure}
 
@@ -249,8 +167,7 @@ whereas the older model included training argument composition separately using 
 \section{Data}
 We crawl 3684 ``weird news'' headlines available publicly 
 on the website of NBC
-news\footnote{\url{
-http://www.nbcnews.com/html/msnbc/3027113/3032524/4429950/4429950_1.html}}, 
+news\footnote{\url{http://www.nbcnews.com/html/msnbc/3027113/3032524/4429950/4429950_1.html}}, 
 such as the following: 
 \begin{itemize}
  \item[] \textit{India weaponizes world's hottest chili.}
@@ -259,18 +176,17 @@ such as the following:
 \end{itemize}
 For training, we assume that the events extracted from this source, called NBC Weird Events
 (NWE) henceforth, are anomalous.  NWE contains 4271 events extracted using 
-SENNA's \citep{collobert2011natural} SRL.  We use 3771 of those events as our negative training data. 
+SENNA's \citep{collobert2011natural} SRL\@.  We use 3771 of those events as our negative training data. 
 Similarly, we extract events also from
 headlines in the AFE section of Gigaword, called Gigaword Events (GWE)
 henceforth.  We assume these events are normal.
 To use as positive examples for training event composition, we sample roughly
 the same number of events from 
-GWE as our negative examples from NWE. From the two sets, we uniformly sample 
+GWE as our negative examples from NWE\@. From the two sets, we uniformly sample 
 1003 events
 as the test set and validate the labels by getting crowd-sourced annotations.
 
-\subsection{Annotation}
-\label{sec:nem_annot}
+\subsection{Annotation}\label{sec:nem_annot}
 We post the annotation of the test set containing 1003 events as
 Human Intelligence Tasks (HIT) on Amazon Mechanical Turk (AMT).
 We break the task into 20 HITs and ask the workers to select one of the 
@@ -285,28 +201,27 @@ annotated events for evaluating future research.
 
 \begin{table}
 \begin{center}
-  \begin{tabular}[c]{|c|c|}
- \hline
+  \begin{tabular}[c]{cc}
+ \toprule
   Total number of annotators & 22\\
-  \hline
+  \midrule
   \textit{Normal} annotations & 56.3\% \\
-  \hline
+  \midrule
   \textit{Strange} annotations & 28.6\% \\
-  \hline
+  \midrule
   \textit{Highly unusual} annotations & 10.3\% \\
-  \hline
+  \midrule
   \textit{Cannot Say} annotations & 4.8\% \\
-  \hline
-  Avg. events annotated per worker & 344 \\
-  \hline
+  \midrule
+  Avg.\ events annotated per worker & 344 \\
+  \midrule
   4-way Inter annotator agreement ($\alpha$) & 0.34 \\
-  \hline
+  \midrule
   3-way Inter annotator agreement ($\alpha$) & 0.56 \\
-  \hline
+  \bottomrule
   \end{tabular}
 \end{center}
- \caption{Annotation Statistics}
- \label{table:annot}
+ \caption{Annotation Statistics}\label{table:annot}
 \end{table}
 Table~\ref{table:annot} shows some statistics of the annotation task.  We
 compute the Inter-Annotator
@@ -317,7 +232,7 @@ missing information, which is the case with
 our task since annotators work on different overlapping subsets of the test set.
  The 4-way IAA shown in the table 
 corresponds to agreement over the original 4-way decision (including
-\textit{cannot say}' while the 3-way IAA is measured after merging the 
+\textit{cannot say}') while the 3-way IAA is measured after merging the 
 \textit{highly unusual} and \textit{strange} decisions.  
 
 Additionally we use
@@ -364,8 +279,7 @@ language model features.
 \begin{figure}
   \begin{center}
   \includegraphics[width=4in]{figures/perplexity-comparison.png}
-  \caption{Comparison of perplexity scores for different labels}
-  \label{fig:nem_lm_ppl}
+  \caption{Comparison of perplexity scores for different labels}\label{fig:nem_lm_ppl}
   \end{center}
 \end{figure}
 
@@ -392,25 +306,24 @@ directly encodes sentences. The following equations describe the model.
  \bar{w} &= \tanh(W_w^\intercal w + b_w) \\
  p_u &= \text{softmax}(W_u^\intercal \bar{w} + b_u)
 \end{align}
-Note that this model is comparable in complexity, and has the same number of non-linear transformations as NEM. $\bar{w}$ represents a
+Note that this model is comparable in complexity, and has the same number of non-linear transformations as NEM\@. $\bar{w}$ represents a
 word level composition instead of an argument-level composition in NEM, and $p_u$ is a probability distribution defined over an
-\underline{u}nstructured composition as features. Training of this baseline model is done in the same way as NEM.
+\underline{u}nstructured composition as features. Training of this baseline model is done in the same way as NEM\@.
 
 \begin{table}
 \begin{center}
-  \begin{tabular}[c]{|c|c|c|}
- \cline{2-3}
- \multicolumn{1}{c|}{}& \textbf{Accuracy} & \textbf{F-Score} \\
- \hline
+  \begin{tabular}[c]{ccc}
+ \toprule
+ \multicolumn{1}{c}{}& \textbf{Accuracy} & \textbf{F-Score} \\
+ \midrule
  PMI Baseline& 45.2\% & 45.1\%\\
  LSTM Baseline & 82.5\% & 77.4\%\\
- \hline
+ \midrule
  NEM & \textbf{84.9\%}& \textbf{79.7\%}\\
- \hline
+ \bottomrule
   \end{tabular}
 \end{center}
- \caption{Classification Performance and Comparison with Baselines}
- \label{table:nem_anomaly_results}
+ \caption{Classification Performance and Comparison with Baselines}\label{table:nem_anomaly_results}
 \end{table}
 
 Table~\ref{table:nem_anomaly_results} shows the results and a comparison with the two baselines.  The accuracy of the 
@@ -422,8 +335,7 @@ for NEM and the LSTM baseline.
 \begin{figure}
   \begin{center}
   \includegraphics[width=4in]{figures/nem_roc.png}
-  \caption{ROC curves for the LSTM baseline and NEM}
-  \label{fig:nem_roc}
+  \caption{ROC curves for the LSTM baseline and NEM}\label{fig:nem_roc}
   \end{center}
 \end{figure}
 
@@ -436,21 +348,20 @@ to measure the competence of a hypothetical worker that made random choices.
 These results are reported in Table~\ref{table:nem_mace_competence}.
 \begin{table}
 \begin{center}
-  \begin{tabular}[c]{|c|c|}
- \hline
+  \begin{tabular}[c]{cc}
+ \toprule
  Human highest  & 0.896 \\
   Human average & 0.633 \\
   Human lowest & 0.144 \\
-  \hline
+  \midrule
   Random & 0.054 \\
-  \hline
+  \midrule
   LSTM Baseline & 0.743 \\
   NEM &  0.797 \\
-  \hline
+  \bottomrule
   \end{tabular}
 \end{center}
- \caption{Anomaly Detection Competence}
- \label{table:nem_mace_competence}
+ \caption{Anomaly Detection Competence}\label{table:nem_mace_competence}
 \end{table}
 Unsurprisingly, the competence of the random classifier is very low, and is worse than the least competent human.
 It can be seen that MACE predicts both the LSTM baseline and NEM to be more competent than human average. This is an encouraging
@@ -464,7 +375,7 @@ comparing the proposed model with one that directly encodes whole sentences have
 composition.
 
 The model we have shown in this chapter is just one instantiation of using selectional preferences to capture implicit knowledge.
-In addition to some of the traditional uses of selectional preferences in dependency structures described in Section~\ref{sec:nem_background},
+In addition to some of the traditional uses of selectional preferences in dependency structures described in Chapter~\ref{chapter:encoding_related_work},
 there also exists a large body of work in applications of selectional preferences to relations among entities. Knowledge base completion and 
 relation extraction
 \citep[among others]{mintz2009distant,sutskever2009modelling,nickel2011three,bordes2011learning,socher2013reasoning,gardner2014incorporating},

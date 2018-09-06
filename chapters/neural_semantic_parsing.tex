@@ -24,22 +24,22 @@ logical form then executing it against the context.
 Our model follows an encoder-decoder architecture, using recurrent neural 
 networks with Long Short Term Memory (LSTM) cells~\citep{hochreiter1997long}. 
 The input question and table entities are first encoded as vectors that are 
-then decoded into a logical form (Figure \ref{fig:nnsp_model}).
+then decoded into a logical form (Figure~\ref{fig:nnsp_model}).
 We make two significant additions to the standard encoder-decoder architecture.
 First, the encoder includes a special entity embedding and linking module that 
 produces a \emph{link embedding} for each question token that represents the 
-table entities it links to (Section \ref{sec:nnsp_encoder}).
+table entities it links to (Section~\ref{sec:nnsp_encoder}).
 These link embeddings are concatenated with word embeddings for each question 
-token, then encoded with a bidirectional LSTM.
+token, then encoded with a bidirectional LSTM\@.
 Second, the action space of the decoder is defined by a \emph{type-constrained 
 grammar} which guarantees that generated logical forms satisfy type constraints 
-(Section \ref{sec:nnsp_decoder}).
+(Section~\ref{sec:nnsp_decoder}).
 The decoder architecture is simply an LSTM with attention that predicts a 
 sequence of generation actions within this grammar.
 
 We train the parser using question-answer pairs as supervision, using an 
 objective based on enumerating logical forms via dynamic programming on 
-denotations \citep{pasupat2016inferring} (Section \ref{sec:nnsp_training}). This 
+denotations \citep{pasupat2016inferring} (Section~\ref{sec:nnsp_training}). This 
 objective function makes it possible to train neural models with 
 question-answer supervision, which is otherwise difficult for efficiency and 
 gradient variance reasons.
@@ -146,8 +146,8 @@ The grammar consists of a collection of four kinds of production rules on holes:
 
 \begin{enumerate}
     \item \textbf{Application} 
-\hole{\tau}{\Gamma}$\rightarrow$\pred{(}\hole{\func{\beta}{\tau}}{\Gamma}~\hole{
-\beta}{\Gamma}\pred{)} rewrites a hole of type \type{\tau} by applying a 
+\hole{\tau}{\Gamma}$\rightarrow$\pred{(}\hole{\func{\beta}{\tau}}{\Gamma}~\hole{\beta}{\Gamma}\pred{)}
+rewrites a hole of type \type{\tau} by applying a 
 function from \type{\beta} to \type{\tau} to an argument of type \type{\beta}. 
 We also permit applications with more than one argument.
     \item \textbf{Constant} \hole{\tau}{\Gamma}$\rightarrow$\pred{const} where 
@@ -155,7 +155,7 @@ constant \pred{const} has type \type{\tau}. This rule generates both
 context-independent operations such as \pred{argmax} and context-specific 
 entities such as \pred{united\_states}.
     \item \textbf{Lambda} \hole{\func{\alpha}{\tau}}{\Gamma}$\rightarrow 
-\lambda x.$ \hole{\tau}{\Gamma \cup \{(x : \alpha)\}} generates a lambda 
+\lambda x$. \hole{\tau}{\Gamma \cup \{(x : \alpha)\}} generates a lambda 
 expression where the argument has type \type{\alpha}. $x$ is a fresh variable 
 name.
     \item \textbf{Variable} \hole{\tau}{\Gamma}$\rightarrow x$ where $(x : 
@@ -169,7 +169,7 @@ $\tau, \alpha,\beta$ with concrete types, producing, e.g., $\hole{c}{\Gamma}
 rule.
 The set of instantiated rules is automatically derived from a corpus of logical 
 forms, which we in turn produce by running dynamic programming on denotations 
-(see Section \ref{sec:nnsp_training}).
+(see Section~\ref{sec:nnsp_training}).
 Every logical form can be derived in exactly one way using the four kinds of 
 rules above; this derivation is combined with the (automatically-assigned) type 
 of each of the logical form's subexpressions to instantiate the type variables 

@@ -29,6 +29,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{stmaryrd}
 \usepackage{algorithm2e}
 \usepackage{bbm}
 \usepackage{multirow}
@@ -43,10 +44,13 @@
 \usepackage{cleveref}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
 \newcommand{\pred}[1]{{\fontfamily{qcr}\selectfont #1}}
 \newcommand{\type}[1]{\ensuremath{\mathtt{#1}}}
 \newcommand{\func}[2]{\ensuremath{\langle \type{#1},\type{#2} \rangle}}
 \newcommand{\hole}[2]{\ensuremath{[\type{#1},#2]}} 
+\newcommand{\secref}[1]{Section~\ref{#1}}
+\newcommand{\WTQ}{\textsc{WikiTableQuestions}}
 
 % Approximately 1" margins, more space on binding side
 %\usepackage[letterpaper,twoside,vscale=.8,hscale=.75,nomarginpar]{geometry}
@@ -157,26 +161,26 @@ neural network models with explicit memory components that can adaptively reason
 \chapter{Introduction}
 \label{chapter:introduction}
 \input{chapters/introduction}
-\chapter{Background}
-\label{chapter:background}
-\input{chapters/background}
+%\chapter{Technical Background}
+%\label{chapter:background}
+%\input{chapters/background}
 \part{Encoding with Background Knowledge}
-\chapter{Related Work}
+\chapter{Related Work: Learning to Encode}
 \label{chapter:encoding_related_work}
 \input{chapters/encoding_related_work}
-\chapter{Sentence Understanding with Background Knowledge from Ontologies}
+\chapter{Encoding Sentences with Background Knowledge from Ontologies}
 \label{chapter:ontolstm}
 \input{chapters/ontolstm}
-\chapter{Leveraging Selectional Preferences as Background Knowledge for Event Understanding}
+\chapter{Leveraging Selectional Preferences as Background Knowledge for Encoding Events}
 \label{chapter:nem}
 \input{chapters/modeling_events}
 \part{Reasoning with Contextual Knowledge}
-\chapter{Related Work}
+\chapter{Related Work: Learning to Reason}
 \label{chapter:reasoning_related_work}
 \input{chapters/reasoning_related_work}
 \chapter{Grammar-Constrained Decoding for Semantic Parsing}
 \label{chapter:wikitables}
-\input{chapters/neural_semantic_parsing}
+\input{chapters/grammar_constrained_decoding}
 \chapter{Iterative Coverage-Guided Search for Semantic Parsing}
 \label{chapter:nlvr}
 \input{chapters/nlvr}

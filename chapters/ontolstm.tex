@@ -109,8 +109,7 @@ that the proposed embeddings effectively use WordNet to improve the accuracy of
 PP attachment predictions.
 
 % concept embeddings
-\section{WordNet-Grounded Context-Sensitive Token Embeddings}
-\label{sec:ontolstm_input_rep}
+\section{WordNet-Grounded Context-Sensitive Token Embeddings}\label{sec:ontolstm_input_rep}
 
 In this section, we focus on defining our context-sensitive token embeddings. 
 We first describe our grounding of word types using WordNet concepts.
@@ -123,8 +122,7 @@ To ground a word type, we identify the set of (direct and indirect) hypernyms of
 A simplified grounding of the word `pool' is illustrated in Figure~\ref{fig:ontolstm_wordnet_grounding}.
 This grounding is key to our model of token embeddings, to be described in the following subsections. 
 
-\subsection{Context-Sensitive Token Embeddings}
-\label{sec:ontolstm_embedding_model}
+\subsection{Context-Sensitive Token Embeddings}\label{sec:ontolstm_embedding_model}
 
 Our goal is to define a context-sensitive model of token embeddings which can be used as a drop-in replacement for traditional type-level word embeddings.
 
@@ -141,20 +139,18 @@ Other WordNet senses for \textit{`pool'} were removed from the figure for simpli
 \begin{figure}
 \begin{center}
 \includegraphics[width=3in]{figures/ontolstm_wordnet_grounding.png}
-\caption{An example grounding for the word \textit{pool}}
-\label{fig:ontolstm_wordnet_grounding}
+\caption{An example grounding for the word \textit{pool}}\label{fig:ontolstm_wordnet_grounding}
 \end{center}
 \end{figure}
 Each WordNet synset $s$ is associated with a set of parameters $\mathbf{v}_s \in \mathbb{R}^n$ which represent its embedding. 
-This parameterization is similar to that of \cite{rothe:15}.
+This parameterization is similar to that of~\cite{rothe:15}.
 
 \paragraph{Embedding model.}
 
 \begin{figure}[t]
 \begin{center}
 \includegraphics[width=3.5in]{figures/ontolstm_token_embedding.png}
-\caption{Steps for computing the context-sensitive token embedding for the word \textit{`pool'}, as described in Section\ref{sec:ontolstm_embedding_model}.
-\label{fig:ontolstm_token_embedding}}
+\caption{Steps for computing the context-sensitive token embedding for the word \textit{`pool'}, as described in Section\ref{sec:ontolstm_embedding_model}.\label{fig:ontolstm_token_embedding}}
 \end{center}
 \end{figure}
 
@@ -198,28 +194,25 @@ To summarize, Figure~\ref{fig:ontolstm_token_embedding} illustrates how to compu
 
 In the following section, we describe our model for predicting PP attachments, including our definition for $\textit{context}$ for this problem.
 
-\section{PP Attachment}
-\label{sec:ontolstm_pp_model}
+\section{PP Attachment}\label{sec:ontolstm_pp_model}
 Disambiguating PP attachments is an important and challenging NLP problem. Since modeling hypernymy and selectional preferences is critical for successful prediction of PP attachments \citep{resnik:93}, it is a good fit for evaluating our WordNet-grounded context-sensitive embeddings.
 
 \begin{figure}[t]
 \begin{center}
-\includegraphics[width=3.2in]{figures/pp_attachment_example.png}
-\label{fig:ontolstm_pp_example}
+\includegraphics[width=3.2in]{figures/pp_attachment_example.png}\label{fig:ontolstm_pp_example}
 \caption{Two sentences illustrating the importance
 of lexicalization in PP attachment decisions.}
 \end{center}
 \end{figure}
 
-Figure~\ref{fig:ontolstm_pp_example}, reproduced from \cite{belinkov2014exploring}, illustrates an example of the PP attachment prediction problem.
+Figure~\ref{fig:ontolstm_pp_example}, reproduced from~\cite{belinkov2014exploring}, illustrates an example of the PP attachment prediction problem.
 In the top sentence, the PP \textit{`with butter'} attaches to the noun \textit{`spaghetti'}. 
 In the bottom sentence, the PP \textit{`with chopsticks'} attaches to the verb \textit{`ate'}.
 The accuracy of a competitive English dependency parser at predicting the head word of an ambiguous prepositional phrase is 88.5\%, significantly lower than the overall unlabeled attachment accuracy of the same parser (94.2\%).\footnote{See Table~\ref{tab:ontolstm_parser_ppa_results} for detailed results.}
 
 This section formally defines the problem of PP attachment disambiguation, describes our baseline model, then shows how to integrate the token-level embeddings in the model.
 
-\subsection{Problem Definition}
-\label{sec:ontolstm_pp_problem_definition}
+\subsection{Problem Definition}\label{sec:ontolstm_pp_problem_definition}
 We follow \cite{belinkov2014exploring}'s definition of the PP attachment problem.
 Given a \underline{p}reposition $p$ and its direct \underline{d}ependent $d$ in the prepositional phrase (PP), our goal is to predict the correct head word for the PP among an ordered list of candidate \underline{h}ead words $\boldsymbol{h}$.
 Each example in the train, validation, and test sets consists of an input tuple $\langle \boldsymbol{h}, p, d \rangle$ and an output index $k$ to identify the correct head among the candidates in $\boldsymbol{h}$. Note that the order of words that form each $\langle \boldsymbol{h}, p, d\rangle$ is the same as that in the corresponding original sentence.
@@ -514,6 +507,8 @@ information in this problem.
 \paragraph{Parameter space:} As mentioned earlier in the case of PP attachment problem,
 the model size in \textit{LSTM-TE} and both variants of \textit{OntoLSTM-TE} are comparable
 (11.1M and 12.7M parameters, respectively).
+
+\section{Comparison with ELMo} \label{sec:ontolstm_vs_elmo}
 
 \section{Conclusion}
 In this chapter, we showed a grounding of lexical items which acknowledges the semantic ambiguity 

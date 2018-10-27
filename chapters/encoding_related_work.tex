@@ -1,17 +1,93 @@
-Before we describe our approaches for incorporating background knowledge in encoders for Natural Language Understanding, let us first set the context by describing prior work done in this space. Our work is related to various lines of research within the NLP community: dealing with synonymy and homonymy in word representations both in the context of distributed embeddings and more traditional vector spaces; hybrid models of distributional and knowledge based semantics; and selectional preferences and their relation with syntactic and semantic relations.
+Before we describe our approaches for incorporating background knowledge in encoders for Natural Language
+Understanding in Chapters~\ref{chapter:ontolstm}~and~\ref{chapter:nem}, let us first set the context by describing
+prior work done in this space. Our work is related to various lines of research within the NLP community:
+incorporating external knowledge into representation learning for lexical sewmantics; dealing with synonymy and
+homonymy in word representations both in the context of distributed embeddings and more traditional vector spaces;
+hybrid models of distributional and knowledge based semantics; and selectional preferences and their relation with
+syntactic and semantic relations.
 
-\section{Multi-prototype Word Vectors}
-The need for going beyond a single vector per word-type has been well established for a while, and many efforts were focused on building multi-prototype vector space models of meaning \cite[][etc.]{reisinger2010multi,huang2012improving,chen2014unified,jauhar:15,neelakantan2015efficient,arora2016linear}. However, the target of all these approaches is obtaining multi-sense word vector spaces, either by incorporating sense tagged information or other kinds of external context. The number of vectors learned is still fixed, based on the preset number of senses. In contrast, our focus is on learning a context dependent distribution over those concept representations. Other work not necessarily related to multi-sense vectors, but still related to our work includes \cite{belanger:15}'s work which proposed a Gaussian linear dynamical system for estimating token-level word embeddings, and \cite{Vilnis2014WordRV}'s work which proposed mapping each word type to a density instead of a point in a space to account for uncertainty in meaning. These approaches do not make use of lexical ontologies and are not amenable for joint training with a downstream NLP task. 
+\section{Representation Learning for Lexical Semantics}
+We first briefly review the shift from distributional representations of lexical semantics to learning distributed
+representations, and then list various attempts at injecting additional knowledge into the representations to make
+them generalize better to new contexts and domains.
 
-Related to the idea of concept embeddings is the work by \cite{rothe:15}, which estimated WordNet synset representations, given pre-trained type-level word embeddings.
-In contrast, our work focuses on estimating token-level word embeddings as context sensitive distributions of concept embeddings.
+\subsection{From distributional to distributed representations}
+Successful early efforts in computational representation of meaning have been driven by the distributional
+hypothesis~\citep{Firth1957}, which claimed that linguistic items with similar distributions have similar meanings.
+Those representations were primarily based on co-occurrence statistics of relevant pairs of items, depending on the
+semantics being represented. One of the earliest methods for producing vector representations of words based on
+their co-occurrence with documents in a corpus was Latent Semantic Analysis~\citep{deerwester1990indexing},
+and used for Information Retrieval. Another similar method was, Hyperspace Analogue to Language
+(HAL)~\citep{lund1996producing}, that aggregated the statistics for words within pre-specified window sizes of
+their co-occurrence as tokens with other tokens (instead of documents) within a large corpus.
 
-\section{Hybrid Models of Knowledge-based and Distributional Semantics}
-There is a large body of work that tried to improve word embeddings using external resources. \cite{yu:14} extended the CBOW model \citep{mikolov:13} by adding an extra term in the training objective for generating words conditioned on similar words according to a lexicon.
-\cite{jauhar:15} extended the skipgram model \citep{mikolov:13} by representing word senses as latent variables in the generation process, and used a structured prior based on the ontology.
+A common issue with these approaches is having to deal with sparsity. Since any corpus, no matter how big it is,
+can provide only a limited number of contexts, generalizing the information gathered from co-occurrence statistics to
+unseen contexts is a challenge. To deal with this issue, dimensionality reduction techniques like Singular Value
+Decomposition (SVD) were commonly used.
+
+More recently, word representation techniques have also included a learning component. Consequently, instead of
+starting from co-occurrence vectors, and optionally reducing their dimensionality, the vectors themselves are
+\textit{learned} based on some objective from a (proxy) task that requires modeling distributional semantics. For example,
+\cite{collobert2008unified} trained a multi-task model, while jointly learning word representations, and it has
+been shown that those representations are generally useful for various downstream applications. Word embeddings
+were a by-product of the model by \cite{collobert2008unified}, but in later work by \cite{mikolov2013efficient},
+it was shown that general purpose word representations can be learned using much simpler, dedicated models.
+These were the Word2Vec models, where word representations were learned with the objective of predicting their
+contexts (Skipgram model), or vice versa (Continuous Bag of Words or CBOW model). The contexts are represented as
+bags of words, thus not explicitly encoding the order of words.
+
+\section{Incorporating Knowledge}
+\subsection{Multi-prototype word vectors}
+It has been well established that a single vector per word cannot capture its meaning in a variety of contexts.
+To address this limitation, many efforts were focused on building multi-prototype vector space models of meaning
+\cite[][etc.]{reisinger2010multi,huang2012improving,chen2014unified,jauhar:15,neelakantan2015efficient,arora2016linear}.
+The target of all these approaches is obtaining multi-sense word vector spaces, either by incorporating
+sense tagged information or other kinds of external context. The number of vectors learned is based on
+the preset number of senses. \cite{belanger:15} proposed a Gaussian linear dynamical system for estimating token-level
+word embeddings, and \cite{Vilnis2014WordRV} proposed mapping each word type to a density instead of a
+point in a space to account for uncertainty in meaning. These approaches do not make use of lexical ontologies and
+are not amenable for joint training with a downstream NLP task. 
+
+Related to the idea of concept embeddings is the work by~\cite{rothe:15}, which estimated WordNet synset
+representations, given pre-trained type-level word embeddings.
+In contrast, our work focuses on estimating token-level word embeddings as context sensitive distributions of
+concept embeddings.
+
+\subsection{Relying on symbolic knowledge}
+There is a large body of work that tried to improve word embeddings using symbolic knowledge from external resources.
+\cite{yu:14} extended the CBOW model \citep{mikolov:13} by adding an extra term in the training objective for
+generating words conditioned on similar words according to a lexicon.
+\cite{jauhar:15} extended the Skipgram model~\citep{mikolov:13} by representing word senses as latent variables in
+the generation process, and used a structured prior based on the ontology.
 \cite{faruqui:15} used belief propagation to update pre-trained word embeddings on a graph that encodes lexical relationships in the ontology.
 Similarly,~\cite{johansson2015embedding} improved word embeddings by representing each sense of the word in a way that reflects the topology of the semantic network they belong to, and then representing the words as convex combinations of their senses.
 In contrast to previous work that was aimed at improving \textit{type level} word representations, we propose an approach for obtaining \textit{context-sensitive} embeddings at the \textit{token level}, while jointly optimizing the model parameters for the NLP task of interest.
+
+\subsection{Contextualized word vectors and relying on deeper models}
+Another way of injecting additional knowledge into vector representations of words is to get it from the internal
+states of models. This technique was introduced by \cite{Peters:2018}, with their Embeddings from Language Models
+(ELMo) idea. The representation learning model encodes the order of words in the context like~\cite{collobert2008unified},
+since they use a language modeling objective. What makes ELMo unique is that
+instead of representing words statically using some internal state of a language model, they are represented
+as dynamic functions of internal states from all the layer of a deep language model, with the parameters of the
+functions being learned jointly from the task objective.
+The use of a language model makes the word representations contextualized
+(TODO: also talk about CoVe and MattP's ACL17 paper) since each word gets a different representation given its
+context. The fact that the parameters of the function are learned based on the end-task objective essentially
+finetunes the representations for the task. We will describe a model with similar motivations in
+Chapter~\ref{chapter:ontolstm}, but instead of exploiting the syntactic and semantic patterns learned from a large
+corpus, by a deep language model like ELMo, the model we present exploits explicit ontological information obtained
+from WordNet \citep{miller1995wordnet}. See Section~\ref{sec:ontolstm_vs_elmo} for an empirical comparison of our
+model with ELMo, and an analysis of the kinds of information learned by the two models. 
+
+Following the success of ELMo, the idea of pre-training a language model, and discriminatively fine-tuning the
+learned representations to other tasks was also used by~\cite{radford2018improving}, while replacing the LSTMs used
+in the neural network architecture for the language modeling task with Transformers~\citep{vaswani2017attention},
+thus benefiting from the efficiency that comes with Transformers. This idea was further extended by~\cite{devlin2018bert},
+who used a bidirectional variant of the model, that jointly modeled the left and right
+contexts.
+
 
 \section{Selectional Preference}
 Selectional preference, a notion introduced by \cite{wilks1973preference}, 
@@ -21,8 +97,8 @@ For example, the knowledge required to identify
 one of the following sentences as meaningless can be encoded as preferences (or 
 restrictions) of the verb.
 \begin{itemize}
- \item[] \textit{Man eats pasta.}
- \item[] \textit{Poetry eats computers.}
+	\item[] \textit{Man eats pasta.}
+	\item[] \textit{Poetry eats computers.}
 \end{itemize}
 The restrictions include \textit{eat} requiring its subject to be animate, its 
 object to be edible, and so on. Though the
@@ -89,5 +165,5 @@ that the expectations of the verb or its role-fillers change dynamically given
 other role fillers.
 
 \section{WordNet as a source for Selectional Preferences}
-\cite{resnik:93} showed the applicability of semantic classes and selectional preferences to resolving syntactic ambiguity. \cite{Zapirain2013SelectionalPF} applied models of selectional preferences automatically learned from WordNet and distributional information, to the problem of semantic role labeling. \cite{resnik:93,brill1994rule,agirre2008improving} and others have used WordNet information towards improving prepositional phrase attachment predictions.
+\cite{resnik:93} showed the applicability of semantic classes and selectional preferences to resolving syntactic ambiguity. \cite{Zapirain2013SelectionalPF} applied models of selectional preferences automatically learned from WordNet and distributional information, to the problem of semantic role labeling.~\cite{resnik:93,brill1994rule,agirre2008improving} and others have used WordNet information towards improving prepositional phrase attachment predictions.
 

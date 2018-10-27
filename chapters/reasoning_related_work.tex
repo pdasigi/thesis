@@ -16,3 +16,51 @@ However, semantic parsers have typically ignored this problem by assuming that e
 \textbf{Data Sets} We use \textsc{WikiTableQuestions} to evaluate our parser as this data set exhibits both a broad domain and complex questions.
 Early data sets, such as \textsc{GeoQuery} \cite{zelle1996} and \textsc{ATIS} \cite{dahl1994}, have small domains with only a handful of different predicates. More recent data sets for question answering against Freebase have a much broader domain, but simple questions \cite{berant2013,cai2013}.
 
+Most of the early methods used for training semantic parsers required the training data to come with annotated logical forms \cite{zelle1996learning,Zettlemoyer2005LearningTM}.  The primary limitation of such methods is that manually producing these logical forms is expensive, making it hard to scale these methods across domains. More recent research has focused on training semantic parsers with \emph{weak supervision} \cite{liang2011learning,berant2013semantic}, or trying to automatically infer logical forms from denotations~\citep{pasupat2016inferring}. However, matching the performance of a fully supervised semantic parser with only weak supervision remains a significant challenge \cite{Yih2016TheVO}.
+
+\section{Formal Definition}
+We formally define the semantic parsing task as follows. Given a dataset where the $i^{th}$ instance is the triple $\{x_i, w_i, d_i\}$, representing a sentence $x_i$, the world $w_i$ associated with the sentence, and the corresponding denotation $d_i$, our goal is to find $y_i$, the translation of $x_i$ in an appropriate logical form language (see \secref{sec:logical_form_languages}), such that $\llbracket y_i \rrbracket^{w_i} = d_i$;
+i.e., the execution of $y_i$ in world $w_i$ produces the correct denotation $d_i$.  A semantic parser defines a distribution over logical forms given an input utterance: $p(Y|x_i; \theta)$.
+
+\section{Prior training algorithms} \label{sec:prior_training}
+
+In this section we describe prior techniques for training semantic parsers with weak supervision: maximizing marginal likelihood, and structured learning algorithms.
+
+\subsection{Maximum marginal likelihood training} \label{sec:mml}
+
+Most work on training semantic parsers from denotations maximizes the likelihood of the denotation given the utterance:
+\begin{equation}
+\max_\theta \prod_{x_i,d_i \in \mathcal{D}} p(d_i|x_i; \theta)
+\end{equation}
+
+\noindent
+The semantic parsing model itself defines a distribution over \emph{logical forms}, however, not \emph{denotations}, so this maximization must be recast as a \emph{marginalization} over logical forms that evaluate to the correct denotation:
+\begin{equation}
+\max_\theta \prod_{x_i,d_i \in \mathcal{D}} \sum_{y_i \in Y | \llbracket y_i \rrbracket^{w_i} = d_i} p(y_i | x_i; \theta)
+\end{equation}
+
+\noindent
+This objective function is called \emph{maximum marginal likelihood} (MML).  The inner summation is in general intractable to perform during training, so it is only approximated.
+
+There are two ways that this approximation has been done in prior work: (1) using a beam search to get the best scoring parses according to the model, hoping that at least some of those parses will yield correct denotations, and using those parses to approximate the inner summation; or (2) performing some kind of (typically bounded-length) heuristic search up front to find a set of logical forms that evaluate to the correct denotation, and using those logical forms to approximate the inner summation.  We will call the first method \emph{dynamic MML}, because the logical forms used for the summation change according to the current model parameters, and the second method \emph{static MML}, as the set of logical forms used for training is fixed.  Almost all prior work uses dynamic MML (e.g., \citet{liang2011learning,berant2013semantic,goldman2017weakly}).
+
+The main benefit of dynamic MML is that it adapts its training signal over time.  As the model learns, it can increasingly focus its probability mass on a small set of very likely logical forms.  The main benefit of static MML is that there is no need to search during training, so there is a consistent training signal even at the start of training, and it can be made much more efficient than dynamic MML.
+
+Both static and dynamic MML have drawbacks, however.  Dynamic MML uses the model to perform search, and it may not find any logical forms that evaluate to the correct denotation, or it may only find spurious logical forms.  This problem is exacerbated when the beam size is small, or when the model is in the early stages of training.  Without strong lexical cues to guide the model, it can be very difficult for the model to learn anything at all, as it blindly searches a very large space of logical forms without any training signal until its random search happens upon a correct logical form.  Traditionally, these lexical cues were provided by the parser's lexicon, though with the advent of neural semantic parsers that remove the lexicon, new techniques for providing lexical hints need to be developed~\cite{goldman2017weakly}.
+
+Static MML, on the other hand, relies heavily on an initial heuristic search to find a good set of likely logical forms that evaluate to the correct denotation.  The particulars of this heuristic search can have a large impact on performance; a smaller candidate set will yield a better training signal, but only if the candidate set contains the logical form that matches the semantics of the utterance.  In the limit of a single logical form, this becomes a fully-supervised learning problem.  However, as the size of the candidate set decreases, the likelihood of the set actually containing the \emph{correct} logical form also decreases.  In finding a set of candidate logical forms, we thus need to strike a balance, keeping the set large enough that it is likely to contain the correct logical form, but small enough to be computationally tractable and to provide a strong training signal.
+
+The only prior work using static MML that we are aware of is that of \citet{krishnamurthy2017neural}, who leveraged the dynamic programming technique of \citet{pasupat2016inferring} to get a candidate set of logical forms.  Even this work was partially dynamic, however---they performed a constrained beam search over this candidate set, only using the handful of most likely logical forms according to the model in the approximation.
+
+\subsection{Structured learning algorithms} \label{sec:erm}
+
+When learning semantic parsers from denotations, structured learning algorithms can also be used, and some prior work has done this~\cite{IyyerSQA2016,guu2017bridging}.  In our work, we consider the use of \emph{expected risk minimization} (ERM)~\cite{smith2006minimum}, which we briefly describe here.  ERM uses beam search to train a model to minimize the expected value of a cost function $\mathcal{C}$ as follows:
+\begin{equation}
+    \min_{\theta} \sum_{i=1}^{N} \mathbb{E}_{\tilde{p}(y_i|x_i; \theta)}\mathcal{C}(x_i, y_i, w_i, d_i)
+    \label{eq:erm}
+\end{equation}
+
+\noindent
+where $\tilde{p}$ is a \emph{re-normalization} of the probabilities assigned to all logical forms on the beam.  Without this re-normalization, and with a -1/0 cost function based on denotation accuracy, ERM will maximize the likelihood of correct logical forms on the beam, which is equivalent to dynamic MML.  ERM is thus a similar learning algorithm to dynamic MML, but it allows for more flexible cost functions, and the re-normalization trains the model to be aware of the fact that inference is done using a beam search.
+
+

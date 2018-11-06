@@ -1,0 +1,25 @@
+Natural Language Understanding (NLU) systems need to encode human generated text (or speech) and reason over it at a deep semantic level.
+Any NLU system typically involves two main components: The first is an \textbf{encoder}, which composes words (or other basic linguistic units) within the input utterances compute encoded representations, 
+which are then used as features in the second component, a \textbf{predictor}, to reason over the encoded inputs and produce the desired output. We argue that the utterances themselves
+do not contain all the information needed for understanding them and identify two kinds of additional knowledge needed to fill the gaps: 
+\textbf{background knowledge} and \textbf{contextual knowledge}. The goal of this thesis is to build end-to-end NLU systems that encode inputs along with relevant
+background knowledge, and reason about them in the presence of contextual knowledge.
+
+The first part of the thesis deals with encoding background knowledge. While distributional methods for encoding sentences have been
+used to represent meaning of words in context, there are other aspects of semantics that are out of their reach. These are related to
+commonsense or real world information which is part of shared human knowledge but is not explicitly present in the input. We address this limitation
+by having the encoders also encode background knowledge, and present two approaches for doing so.
+First, we leverage explicit symbolic knowledge from WordNet to learn ontology-grounded token-level representations of words. 
+We show sentence encodings based on our token representations outperform those based on off-the-shelf word embeddings at predicting prepositional phrase attachment and
+textual entailment.
+Second, we look at cases where the required background knowledge cannot be stated symbolically. We model selectional restrictions
+verbs place on their semantic role fillers to deal with one such case. We use this model to encode events, and show that these representations are better at detecting anomalies
+in newswire texts than sentence representations produced by LSTMs.
+
+The second part focuses on reasoning with contextual knowledge. We look at Question-Answering (QA) tasks where reasoning can be expressed as sequences of discrete operations, 
+(i.e.\ semantic parsing problems), and the answer can be obtained by executing the sequence of operations (or logical form) grounded in some context.
+We do not assume the availability of logical forms, and build weakly supervised semantic parsers. This training setup comes with significant challenges since it involves searching over an exponentially
+large space of logical forms. To deal with these challenges, we propose 1) using a grammar to constrain the output space of the semantic parser; 2) leveraging a lexical coverage measure to ensure the
+relevance of produced logical forms to input utterances; and 3) a novel iterative training scheme that alternates between searching for logical forms, and maximizing the likelihood of the retrieved ones, thus effectively transferring
+the knowledge from simpler logical forms to more complex ones. We build neural encoder-decoder models for semantic parsing that use these techniques, and show state-of-the-art results on two complex QA tasks grounded in
+structured contexts. Furthermore, we discuss how these techniques can be extended to reading comprehension over unstructured contexts, and show a pilot empirical study to motivate future work.

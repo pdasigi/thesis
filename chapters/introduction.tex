@@ -4,9 +4,9 @@ problem in the field of Artificial Intelligence. An NLU system should process hu
 (or speech) at a deep semantic level, represent the semantics of the processed inputs, and reason
 over them to perform a given task. NLU is thus an umbrella term that can be defined in terms of the
 tasks that fall under it, and these are tasks that require computational systems to perform some
-amount of non-trivial language comprehension.
+amount of nontrivial language comprehension.
 
-NLU is a sub-field of Natural Language Processing (NLP), and the distinction between NLP tasks that
+NLU is a subfield of Natural Language Processing (NLP), and the distinction between NLP tasks that
 fall under NLU and those that do not, can be made in terms of the depth of the semantics that needs
 to be modeled for performing those tasks.  For example, a well-performing part-of-speech (POS)
 tagger for English can be built mostly using surface level lexical features
@@ -78,7 +78,6 @@ specific), and $\mathbf{o}$ are the final task specific predictions. For example
 Analysis or RTE, $\mathbf{o}$ are categorical labels indicating the sentiment or entailment
 respectively.
 
-%TODO: Ed:"this paragraph needs a lot more detail"
 \paragraph{Encoding} In older feature-rich methods for NLU, Equation~\ref{eq:generic_encoding} used
 to be a mapping of the inputs to a hand designed feature space, typically containing patterns over
 word classes based on part-of-speech \citep{corley2005measuring} or Wordnet synsets
@@ -105,7 +104,7 @@ answer \citep{Zettlemoyer2005LearningTM}.
 
 \section{Knowledge}\label{sec:intro_external_knowledge} We attempted to describe a generic NLU
 system in Equations~\ref{eq:generic_encoding} and~\ref{eq:generic_reasoning}, with the assumption
-that the information provide by the utterances, $\textbf{I}$ alone is sufficient for encoding their
+that the information provide by the utterances $\textbf{I}$ alone is sufficient for encoding their
 meaning and reasoning over them. However, this is seldom the case, and the generic formulation we
 have so far is missing another key input.  Humans use language as a medium to transfer information.
 However, since language is aimed at other humans, we often rely on prior knowledge that we share ---
@@ -194,7 +193,6 @@ Based on these observations, we define two kinds of background knowledge: \textb
 
 
 \subsection{Contextual Knowledge for Reasoning}
-%TODO: Ed: "There are several types of contexts: co-text, situational, political, environmental..."
 Meaning is often context-dependent. Contexts provide the circumstances under which the meaning of
 utterances is finally decoded. Reasoning in those contexts has the pre-requisite of grounding the
 inputs in them.  For example, an automated reading comprehension system that is built to answer
@@ -360,7 +358,7 @@ task performance. While interpreting the encoded representations is also an acti
 topic, it is beyond the scope of this thesis.
 
 \section{Thesis Contributions and Outline}
-In this thesis, we make the following hypotheses, and provide empirical evidence for them:
+In this thesis, we make the following claims, and provide empirical evidence for them:
 \begin{enumerate}
 	\item While encoding utterances, incorporating relevant symbolic background knowledge results
 		in better representations of inputs.
@@ -377,10 +375,6 @@ In this thesis, we make the following hypotheses, and provide empirical evidence
 \end{enumerate}
 
 The document is organized as follows:
-
-%Chapter~\ref{chapter:background} describes the pre-requisite background for the techniques used in
-%this thesis. We will provide an overview of representation learning techniques and structured
-%prediction algorithms used in this thesis.
 
 Chapter~\ref{chapter:encoding_related_work} describes the previous work done in encoding utterances
 at various levels of granularity, and the attempts to incorporate background knowledge into
@@ -427,6 +421,8 @@ logical form language to produce increasingly complex logical forms. We show tha
 generally applicable to training semantic parsers with weak supervision, and show state of the art
 results on NLVR and \textsc{WikiTableQuestions}.
 
-Finally, in Chapter~\ref{chapter:conclusion}, we will describe several potential directions for
+Finally, in Chapter~\ref{chapter:conclusion}, we describe several potential directions for
 future research, building on top of the tasks we studied in this thesis, and the kinds of knowledge
-we exploited.
+we exploited. As a concrete example, we discuss how the techniques presented in
+Chapters~\ref{chapter:wikitables} and~\ref{chapter:nlvr} can be extended to unstructured contexts,
+and the challenges that come with doing so, as a motivation for future work in this area.

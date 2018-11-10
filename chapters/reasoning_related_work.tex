@@ -1,44 +1,106 @@
 In this chapter, we will discuss reasoning, particularly the kind that involves
 explicit discrete operations. The work we describe in
-Chapters~\ref{chapter:wikitables} and~\ref{chapter:nlvr} employ discrete
-operation based reasoning, and this chapter provides necessary background.
+Chapters~\ref{chapter:wikitables} and~\ref{chapter:nlvr} employs discrete
+operation based reasoning, and this chapter provides ncessary background.
 
-\section{Reasoning with discrete operations}
+\section{Learning to Reason with Latent Variables}
 Reasoning involves making predictions related to the task at hand. Quite often,
-the model used for the task contains latent variables on which the final
-prediction is conditioned. Estimating these latent variables can be thought of as
-intermediate operations performed by the model before producing the final
-output. For example, recent reading comprehension systems~\citep[among
-others]{Seo2016BidirectionalAF,yu2018qanet} built for answering questions given
-some context, have sub-components that measure the relevance of various parts of
-the queries to various parts of the corresponding contexts. This is typically
-done using an attention mechanism~\citep{bahdanau:14}, that produces
-(normalized) scores of relevance. Relevance here can be understood as a latent
-variable, and its computation is a continuous intermediate operation. An
-advantage of building a model with continuous latent variables is that learning
-can be performed end-to-end with back propogation. However, continuous
-intermediate operations have limitations.
+the process goes through certain intermediate operations that lead to the final
+prediction. Statistical reasoning models may model the intermediate operations as
+estimating latent variables on which the final predictions are conditioned.
+The latent variables may be continuous or discrete, and depending on the task at
+hand, one choice may be more appropriate than the other. Using continuous latent
+variables makes training easier since it is generally straight forward to use 
+back-propagation. Discrete latent variable make training harder, as we discuss
+later in this chapter, but it may be worth dealing with the difficulty in some
+cases. Let us look at two examples to discuss the pros and cons of both the options.
 
-Consider the task of answering the following question given the context below,
-an example taken from~\cite{liang2016learning}:
+First, consider an example from the Stanford Question Answering
+Dataset (SQuAD)~\citep{Rajpurkar2016SQuAD10}, with the following context.
+\begin{quote}
+	\textit{Nikola Tesla (10 July 1856 – 7 January 1943) was a Serbian American
+	inventor, electrical engineer, mechanical engineer, physicist, and
+	futurist best known for his contributions to the design of the modern
+	alternating current (AC) electricity supply system.}
+\end{quote}
+One question associated with this context is
+\textit{In what year was Nikola Tesla born?}
+
+Recent reading comprehension systems~\citep[among
+others]{Seo2016BidirectionalAF,yu2018qanet} built for answering questions like
+the one above, have sub-components that measure the relevance of various parts of
+the queries to various parts of the corresponding contexts. This is typically
+done using a soft attention mechanism~\citep{bahdanau:14}, that produces
+(normalized) scores of query-context relevance. Relevance in these models is a 
+\emph{continuous} latent variable, and thus its estimation is a continuous intermediate
+operation. This setup lets the models learn diverse task specific patterns for
+matching contexts and queries. For example, the model might assign a higher
+relevance score to the span \textit{what year} in the question, and each of the
+spans \textit{1856} and \textit{1943} in the context. This is a case where the
+choice of continuous latent variables is more appropriate. 
+
+On the other hand, consider the task of answering the following question given
+the context below, an example taken from~\cite{liang2016learning}:
 \begin{itemize}
 	\item[] Question: \textit{What is the largest prime less than 10?}
 	\item[] Context: \textit{Primes: \{2, 3, 5, 7, 11, 13,$\ldots$\}}
 \end{itemize}
-Clearly, this task requires performing discrete operations like \textit{argmax}
-and \textit{less than}.
 
-\section{Weakly supervised semantic parsing}
+Clearly, this task requires comparing whether each of the values is less than
+$10$, and finding the largest among a given set of numbers.
+If we wanted to model the intermediate operations in this task as continuous latent
+variables, one potential way of doing so would be the following: The model
+scores the relevance of each span in the context to the span \textit{less than 10} in the
+question, hopefully learning to score those with numbers that are actually less than $10$
+higher than those with numbers that are greater. Similarly we hope to the model
+would also learn to score spans with greater numbers higher than those with
+smaller numbers, given the span \textit{largest}. That is, the model
+should essentially learn the semantics of \textit{less than} and
+\textit{largest}. This direction is an active research area, and is explored in
+some recent efforts like~\cite[among
+others]{andreas2016neural,trask2018neural,hudson2018compositional}.
 
+In this thesis, we argue that if the task requires just a finite set of
+well-defined operations (like \textit{less-than},
+\textit{max},etc.), it would be more data-efficient to start with those
+operations as a set of discrete latent variables. They could provide a useful
+inductive bias to the model, which could then model the probability of
+performing a specific
+operation at a time step, given some representation of the context, the utterance, and the
+history of operations performed previously. While decoding, when we have the
+most likely sequence of operations, executing them to produce an answer would be a
+deterministic operation. Reasoning with semantic parsing and program induction~\citep[among
+others]{krishnamurthy2012weakly,berant2013semantic,artzi2013,kushman2014,krishnamurthy2017neural}
+fall under this category.
 
-Semantic parsing is the problem of translating human language into computer
-language, and therefore is at the heart of natural language understanding.  A
+In this thesis, we model our reasoning tasks as
+semantic parsing problems. We do not assume that the correct sequence of
+discrete operations, or in other words, the program or the logical form is not
+available during training. We train weakly supervised semantic parsers for
+question, context, denotation triples. First, we will introduce related work in
+semantic parsing, and then move to the challenges introduced by the lack of
+direct supervision from logical forms.
+
+\section{Semantic Parsing}
+Semantic parsing is the problem of translating human language into a formal
+language that can be executed against a context. A
 typical semantic parsing task is question answering against a database, which
 is accomplished by translating questions into executable logical forms (i.e.,
-programs) that output their answers. Semantic parsers vary along a few
-important dimensions:
+programs) that output their answers.
 
-\textbf{Formalism} Early work on semantic parsing used lexicalized grammar
+\subsection{Formal Definition}
+We formally define the semantic parsing task as
+follows. Given a dataset where the $i^{th}$ instance is the triple $\{x_i, w_i,
+d_i\}$, representing a sentence $x_i$, the world $w_i$ associated with the
+sentence, and the corresponding denotation $d_i$, our goal is to find $y_i$,
+the translation of $x_i$ in an appropriate logical form language, such that
+$\llbracket y_i\rrbracket^{w_i} = d_i$; i.e., the execution of $y_i$ in world $w_i$ produces
+the correct denotation $d_i$.  A semantic parser defines a distribution over
+logical forms given an input utterance: $p(Y|x_i; \theta)$.
+
+\subsection{Variations}
+Semantic parsers vary along a few important dimensions:
+\paragraph{Formalism} Early work on semantic parsing used lexicalized grammar
 formalisms such as Combinatory Categorial
 Grammar~\cite{zettlemoyer05,zettlemoyer2007online,kwiatkowski2011lexical,kwiatkowski2013,krishnamurthy2012weakly,artzi2013}
 and
@@ -47,75 +109,69 @@ These formalisms have the advantage of only generating well-typed logical
 forms, but the disadvantage of introducing latent syntactic variables that make
 learning difficult. Another approach is to treat semantic parsing as a machine
 translation problem, where the logical form is linearized then predicted as an
-unstructured sequence of tokens \cite{andreas2013}.  This approach is taken by
-recent neural semantic parsers \cite{jia2016,dong2016,locascio2016,ling2016}.
+unstructured sequence of tokens~\citep{andreas2013}.  This approach is taken by
+recent neural semantic parsers~\citep{jia2016,dong2016,locascio2016,ling2016}.
 This approach has the advantage of predicting the logical form directly from
 the question without latent variables, which simplifies learning, but the
-disadvantage of ignoring type constraints on logical forms.  Our
-type-constrained neural semantic parser inherits the advantages of both
-approaches: it only generates well-typed logical forms and has no syntactic
-latent variables as every logical form has a unique derivation. Recent work has
-explored similar ideas to ours in the context of Python code generation
-\cite{yin17acl,rabinovich17acl}.
+disadvantage of ignoring type constraints on logical forms.
 
-\textbf{Entity Linking} Identifying the entities mentioned in a question is a
-critical subproblem of semantic parsing in broad domains and proper entity
-linking can lead to large accuracy improvements \cite{yih2015stagg}.  However,
+In Chapter~\ref{chapter:wikitables},  we introduce a type-constrained neural
+semantic parser that inherits the advantages of both
+approaches: it only generates well-typed logical forms and has no syntactic
+latent variables as every logical form has a unique derivation. Other recent
+work that explored ideas similar ideas to ours in the context of Python code
+generation is~\cite{yin17acl} and~\cite{rabinovich17acl}.
+
+\paragraph{Entity Linking} Identifying the entities mentioned in a question is a
+critical sub-problem of semantic parsing in broad domains and proper entity
+linking can lead to large accuracy improvements~\cite{yih2015stagg}.  However,
 semantic parsers have typically ignored this problem by assuming that entity
 linking is done beforehand (as the neural parsers above do) or using a simple
 parameterization for the entity linking portion (as the lexicalized parsers
-do). Our parser explicitly includes an entity linking module that enables it to
-model the highly ambiguous and implicit entity mentions in
-\textsc{WikiTableQuestions}.
+do).
 
-\textbf{Supervision} Semantic parsers can be trained from labeled logical forms
-\cite{zelle1996,zettlemoyer05} or question-answer pairs
-\cite{liang2011learning,berant2013}. Question-answer pairs were considered
-easier to obtain than labeled logical forms, though recent work has
+The parser we describe in Chapter~\ref{chapter:wikitables} explicitly includes
+an entity linking module that enables it to model the highly ambiguous and
+implicit entity mentions in
+\WTQ~\cite{pasupat2015compositional}.
+
+\paragraph{Complexity of contexts and questions} Early work that used
+semantic parsing dealt with data
+sets such as \textsc{GeoQuery}~\citep{zelle1996} and
+\textsc{ATIS}~\citep{dahl1994}.
+They have small domains with only a handful of different predicates.
+Some of the more recent data sets for question answering against Freebase have
+a much broader domain, but simple questions~\citep{berant2013,cai2013}. \WTQ,
+one of the datasets we work with in this thesis, is both general domain and
+comes with complex questions that require nested reasoning, leading to
+highly compositional logical forms.
+
+\section{Weak Supervision}
+Semantic parsers can be trained from labeled logical forms~\citep{zelle1996,zettlemoyer05}
+or question-answer pairs~\citep{liang2011learning,berant2013}.
+In terms of creating datasets, question-answer
+pairs were considered easier to obtain than labeled logical forms, though recent work has
 demonstrated that logical forms can be collected efficiently and are more
-effective \cite{yih2016value}. However, a key advantage of question-answer
+effective~\citep{yih2016value}. However, a key advantage of training with question-answer
 pairs is that they are agnostic to the domain representation and logical form
-language (e.g., lambda calculus or $\lambda$-DCS). This property is important
-for problems such as semi-structured tables where the proper domain
-representation is unclear.
+language (e.g., lambda calculus or $\lambda$-DCS).
 
-
-\textbf{Data Sets} We use \textsc{WikiTableQuestions} to evaluate our parser as
-this data set exhibits both a broad domain and complex questions.  Early data
-sets, such as \textsc{GeoQuery} \cite{zelle1996} and \textsc{ATIS}
-\cite{dahl1994}, have small domains with only a handful of different
-predicates. More recent data sets for question answering against Freebase have
-a much broader domain, but simple questions \cite{berant2013,cai2013}.
-
-Most of the early methods used for training semantic parsers required the
-training data to come with annotated logical forms
-\cite{zelle1996learning,Zettlemoyer2005LearningTM}.  The primary limitation of
-such methods is that manually producing these logical forms is expensive,
-making it hard to scale these methods across domains. More recent research has
-focused on training semantic parsers with \emph{weak supervision}
-\cite{liang2011learning,berant2013semantic}, or trying to automatically infer
+In terms of modeling, most of the early methods used for training semantic
+parsers required the training data to come with annotated logical
+forms~\citep{zelle1996learning,Zettlemoyer2005LearningTM}. More recent research has
+focused on training semantic parsers with \emph{weak 
+supervision}~\citep{liang2011learning,berant2013semantic}, or trying to automatically infer
 logical forms from denotations~\citep{pasupat2016inferring}. However, matching
 the performance of a fully supervised semantic parser with only weak
-supervision remains a significant challenge \cite{Yih2016TheVO}.
+supervision remains a significant challenge~\citep{Yih2016TheVO}.
 
-\section{Formal Definition} We formally define the semantic parsing task as
-follows. Given a dataset where the $i^{th}$ instance is the triple $\{x_i, w_i,
-d_i\}$, representing a sentence $x_i$, the world $w_i$ associated with the
-sentence, and the corresponding denotation $d_i$, our goal is to find $y_i$,
-the translation of $x_i$ in an appropriate logical form language (see
-\secref{sec:logical_form_languages}), such that $\llbracket y_i
-\rrbracket^{w_i} = d_i$; i.e., the execution of $y_i$ in world $w_i$ produces
-the correct denotation $d_i$.  A semantic parser defines a distribution over
-logical forms given an input utterance: $p(Y|x_i; \theta)$.
-
-\section{Prior training algorithms} \label{sec:prior_training}
+\subsection{Training weakly supervised semantic parsers}\label{sec:prior_training}
 
 In this section we describe prior techniques for training semantic parsers with
-weak supervision: maximizing marginal likelihood, and structured learning
-algorithms.
+weak supervision: maximizing marginal likelihood, structured learning
+algorithms, and reinforcement learning techniques.
 
-\subsection{Maximum marginal likelihood training} \label{sec:mml}
-
+\subsubsection{Maximum marginal likelihood training}\label{sec:mml}
 Most work on training semantic parsers from denotations maximizes the
 likelihood of the denotation given the utterance: \begin{equation} \max_\theta
 \prod_{x_i,d_i \in \mathcal{D}} p(d_i|x_i; \theta) \end{equation}
@@ -149,7 +205,7 @@ time.  As the model learns, it can increasingly focus its probability mass on a
 small set of very likely logical forms.  The main benefit of static MML is that
 there is no need to search during training, so there is a consistent training
 signal even at the start of training, and it can be made much more efficient
-than dynamic MML.
+than dynamic MML\@.
 
 Both static and dynamic MML have drawbacks, however.  Dynamic MML uses the
 model to perform search, and it may not find any logical forms that evaluate to
@@ -183,8 +239,7 @@ forms.  Even this work was partially dynamic, however---they performed a
 constrained beam search over this candidate set, only using the handful of most
 likely logical forms according to the model in the approximation.
 
-\subsection{Structured learning algorithms} \label{sec:erm}
-
+\subsubsection{Structured learning algorithms}\label{sec:erm}
 When learning semantic parsers from denotations, structured learning algorithms
 can also be used, and some prior work has done
 this~\cite{IyyerSQA2016,guu2017bridging}.  In our work, we consider the use of
@@ -202,4 +257,4 @@ MML\@.  ERM is thus a similar learning algorithm to dynamic MML, but it allows
 for more flexible cost functions, and the re-normalization trains the model to
 be aware of the fact that inference is done using a beam search.
 
-
+\subsubsection{Reinforcement learning methods}

@@ -96,7 +96,7 @@ sentence, and the corresponding denotation $d_i$, our goal is to find $y_i$,
 the translation of $x_i$ in an appropriate logical form language, such that
 $\llbracket y_i\rrbracket^{w_i} = d_i$; i.e., the execution of $y_i$ in world $w_i$ produces
 the correct denotation $d_i$.  A semantic parser defines a distribution over
-logical forms given an input utterance: $p(Y|x_i; \theta)$.
+logical forms given an input utterance: $p(y_i|x_i; \theta)$.
 
 \subsection{Variations}
 Semantic parsers vary along a few important dimensions:
@@ -165,27 +165,32 @@ logical forms from denotations~\citep{pasupat2016inferring}. However, matching
 the performance of a fully supervised semantic parser with only weak
 supervision remains a significant challenge~\citep{Yih2016TheVO}.
 
-\subsection{Training weakly supervised semantic parsers}\label{sec:prior_training}
-
-In this section we describe prior techniques for training semantic parsers with
+We now describe prior techniques for training semantic parsers with
 weak supervision: maximizing marginal likelihood, structured learning
 algorithms, and reinforcement learning techniques.
 
-\subsubsection{Maximum marginal likelihood training}\label{sec:mml}
+\subsection{Maximum marginal likelihood training}\label{sec:mml}
 Most work on training semantic parsers from denotations maximizes the
-likelihood of the denotation given the utterance: \begin{equation} \max_\theta
-\prod_{x_i,d_i \in \mathcal{D}} p(d_i|x_i; \theta) \end{equation}
+likelihood of the denotation given the utterance:
+\begin{equation}
+	\max_\theta \prod_{i=1}^N p(d_i|x_i; \theta)
+\end{equation}
 
 \noindent The semantic parsing model itself defines a distribution over
 \emph{logical forms}, however, not \emph{denotations}, so this maximization
 must be recast as a \emph{marginalization} over logical forms that evaluate to
-the correct denotation: \begin{equation} \max_\theta \prod_{x_i,d_i \in
-\mathcal{D}} \sum_{y_i \in Y | \llbracket y_i \rrbracket^{w_i} = d_i} p(y_i |
-x_i; \theta) \end{equation}
+the correct denotation:
+\begin{equation}
+	\max_\theta \prod_{i=1}^N
+	\sum_{y_i \in Y_i | \llbracket y_i \rrbracket^{w_i} = d_i} p(y_i | x_i; \theta)
+	\label{eq:mml_objective}
+\end{equation}
 
 \noindent This objective function is called \emph{maximum marginal likelihood}
-(MML).  The inner summation is in general intractable to perform during
-training, so it is only approximated.
+(MML).  $Y_i$ here is the set of all valid logical forms in the world
+corresponding to the $i^\text{th}$ data instance. The summation over $Y_i$ is in
+general intractable to perform during training because the set $Y_i$ is too
+large to enumerate, so it is only approximated.
 
 There are two ways that this approximation has been done in prior work: (1)
 using a beam search to get the best scoring parses according to the model,
@@ -231,30 +236,107 @@ candidate set decreases, the likelihood of the set actually containing the
 logical forms, we thus need to strike a balance, keeping the set large enough
 that it is likely to contain the correct logical form, but small enough to be
 computationally tractable and to provide a strong training signal.
+In Chapter~\ref{chapter:wikitables}, we use static MML, and leverage the dynamic
+programming technique of \citet{pasupat2016inferring} to get a candidate set of logical
+forms.
 
-The only prior work using static MML that we are aware of is that of
-\citet{krishnamurthy2017neural}, who leveraged the dynamic programming
-technique of \citet{pasupat2016inferring} to get a candidate set of logical
-forms.  Even this work was partially dynamic, however---they performed a
-constrained beam search over this candidate set, only using the handful of most
-likely logical forms according to the model in the approximation.
+\subsection{Reinforcement learning methods}
+When training models with discrete latent variables, a popular choice is to use
+Reinforcement Learning (RL) techniques. There is a fair amount of prior work that
+used RL algorithms, particularly policy gradient methods for training weakly
+supervised semantic parsers. Examples
+include~\cite{Andreas2016LearningTC,Liang2016NeuralSM,guu2017bridging,liang2018memory}.
 
-\subsubsection{Structured learning algorithms}\label{sec:erm}
-When learning semantic parsers from denotations, structured learning algorithms
-can also be used, and some prior work has done
-this~\cite{IyyerSQA2016,guu2017bridging}.  In our work, we consider the use of
-\emph{expected risk minimization} (ERM)~\cite{smith2006minimum}, which we
-briefly describe here.  ERM uses beam search to train a model to minimize the
-expected value of a cost function $\mathcal{C}$ as follows: \begin{equation}
-\min_{\theta} \sum_{i=1}^{N} \mathbb{E}_{\tilde{p}(y_i|x_i;
-\theta)}\mathcal{C}(x_i, y_i, w_i, d_i) \label{eq:erm} \end{equation}
+These methods optimize the following objective:
+\begin{equation}
+	\max_{\theta} \sum_{i=1}^N \sum_{y_i \sim p(y_i|x_i;\theta)} p(y_i|x_i;\theta) \mathcal{R}(y_i)
+	\label{eq:rl_objective}
+\end{equation}
+Let us now compare this objective function with the MML objective in
+Equation~\ref{eq:mml_objective}. If we define a reward function:
+\begin{equation}
+	\mathcal{R}_{MML}(y_i) = 
+	\begin{cases}
+		1, & \text{if } \llbracket y_i \rrbracket^{w_i} = d_i\\
+		0, & \text{otherwise}
+	\end{cases}
+	\label{eq:mml_reward}
+\end{equation}
+we can rewrite the MML objective in Equation~\ref{eq:mml_objective} as:
+\begin{equation}	
+	\max_{\theta} \prod_{i=1}^N \sum_{y_i \in Y_i} p(y_i|x_i;\theta)
+	\mathcal{R}_{MML}(y_i)
+	\label{eq:mml_objective2}
+\end{equation}
+When rewritten like this, the MML objective in Equation~\ref{eq:mml_objective2} is a lot more
+similar to the RL objective in Equation~\ref{eq:rl_objective}. There are two
+differences that remain: First, in MML, we are maximizing a product of summations,
+whereas in the RL objective, it is a sum of summations. Second, while we use
+beam search or a bounded offline search to approximate the inner summation in
+MML, we use sampling in RL methods.
 
-\noindent where $\tilde{p}$ is a \emph{re-normalization} of the probabilities
-assigned to all logical forms on the beam.  Without this re-normalization, and
-with a -1/0 cost function based on denotation accuracy, ERM will maximize the
-likelihood of correct logical forms on the beam, which is equivalent to dynamic
-MML\@.  ERM is thus a similar learning algorithm to dynamic MML, but it allows
-for more flexible cost functions, and the re-normalization trains the model to
-be aware of the fact that inference is done using a beam search.
+\subsection{Structured learning algorithms}\label{sec:erm}
+Since semantic parsing is a structured prediction problem, algorithms used for
+other structured prediction problems may be applicable. 
+There exists some prior work~\citep{IyyerSQA2016,guu2017bridging} in using 
+structured learning algorithms for semantic parsing. In
+Chapter~\ref{chapter:nlvr}, we consider the use of
+\emph{Expected Risk Minimization} (ERM)~\citep{smith2006minimum}, which we
+briefly describe here.  ERM trains a model to minimize the
+expected value of an arbitrary cost function $\mathcal{C}$ as follows:
+\begin{equation}
+\min_{\theta} \sum_{i=1}^{N} \mathbb{E}_{p(y_i|x_i;
+\theta)}\mathcal{C}(y_i) \label{eq:erm_objective}
+\end{equation}
 
-\subsubsection{Reinforcement learning methods}
+\noindent When applied to semantic parsing, estimating $p(y_i|x_i; \theta)$
+could be intractable, again for the same reasons as it is for MML\@. So we use
+beam search here, and approximate $p$ as $\tilde{p}$ by \emph{re-normalizing}
+the probabilities assigned to all logical forms on the beam.
+
+The fact that we can define $\mathcal{C}$ as an arbitrary cost function makes
+this objective a good choice for weakly supervised semantic parsing. This lets
+us incorporate additional knowledge to guide the training process,
+thus effectively dealing with the issue of weak supervision. In
+Chapter~\ref{chapter:nlvr}, we define the cost function as a linear combination
+of a coverage measure and denotation accuracy. The coverage measure scores how
+much any given logical form, $y_i$ overlaps with the functions triggered by the
+utterance $x_i$. We show that this additional loss function provides a 
+stronger training signal than a denotation based loss alone.
+
+It may be noted that the ERM objective is also very similar to the RL objective
+shown in Equation~\ref{eq:rl_objective}. If we expand the expectation, and 
+define a reward function as follows
+\begin{equation}
+	\mathcal{R}_{ERM}(y_i) = -\mathcal{C}(y_i)
+\end{equation}
+
+\noindent the ERM objective becomes
+\begin{equation}
+	\max_{\theta} \sum_{i=1}^{N} \sum_{y_i \in Y} p(y_i|x_i;\theta)
+	\mathcal{R}_{ERM}(y_i) \label{eq:erm_objective2}	
+\end{equation}
+
+\noindent So like MML, we use beam search to approximate the inner summation,
+and like the policy gradient methods in RL, we use an arbitrary reward function.
+
+\subsection{Bridging objectives}
+Given the similarities among the objectives discussed so far, prior work has
+explored bridging objectives to exploit the benefits of each
+of them, and adapting them to specific problems.
+
+\cite{guu2017bridging} note the
+similarity between MML and RL objectives, and define a new objective that
+addresses shortcomings of both MML and RL in dealing with spurious logical forms
+when applied to weakly supervised semantic parsing. First, beam search in MML
+has high bias when it comes to exploring paths that
+lead to the correct answer, and they address this issue by injecting random
+noise into exploration, like it is common in policy gradient methods. Second,
+the gradient weights in RL are proportional to their current probability,
+causing spurious paths to keep getting higher probability. They propose
+meritocratic gradient updates to ensure all programs that obtain rewards get
+upweighted equally, inspired by the fact that MML normalizes its
+``rewards'' for each example.
+
+\cite{IyyerSQA2016} bridge RL techniques with structured learning methods and
+propose a reward-guided search technique for weakly supervised semantic parsing.

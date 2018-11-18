@@ -1,11 +1,73 @@
-In this chapter, we turn to the problem of reasoning over structured contexts, 
-towards comprehending compositional language. We take a semantic parsing 
-approach for Question Answering on (semi) structured
-domains, and describe an encoder-decoder framework, where we set explicit type 
-constraints on the decoder. Following the overarching theme of this thesis, we 
-seek to build end-to-end models for these QA problems
-as well. Accordingly, we assume that the only direction supervision we get is 
-from the answers at the end (i.e., our semantic parser is weakly supervised).
+In this chapter, we present an application of knowledge-guided reasoning. We
+build a neural semantic parser for question answering over a challenging
+dataset, and show how the model benefits from additional knowledge.
+In particular, we will discuss how sequence-to-sequence models, which have
+been shown to work very well for modeling sequences in language, should be
+adapted to work for semantic parsing. We modify the decoder
+in an encoder-decoder model to:
+\begin{enumerate}
+	\item Only produce syntactically and semantically valid logical forms
+	\item Score previously unseen entities by linking them to tokens in the
+		utterance.
+\end{enumerate}
+As described in Chapter~\ref{chapter:reasoning_related_work}, 
+we assume that the supervision the model gets is only from the answers at the
+end (i.e., our semantic parser is weakly supervised). However, the two main
+contributions of this chapter are also applicable to the fully supervised setup.
+We now describe in detail the problems we solve in this chapter.
+
+\section{Need for Grammar Constraints}
+Sequence-to-sequence models~\citep{sutskever:14}, have been successfully used for Machine
+Translation~\citep[among many
+others]{sutskever:14,cho2014learning,bahdanau2014neural,wiseman2016sequence,artetxe2017unsupervised},
+Summarization~\citep[among others]{Nallapati2016AbstractiveTS,Paulus2017ADR},
+and other kinds of text generation tasks like dialogue
+generation~\citep[for one]{li2017adversarial} and generation with style
+control~\citep[for one]{ficler2017controlling}. In all these cases, and also most
+other cases where encoder-decoder models are used for transducing language
+inputs, the targets are in natural language as well. That is not the case when
+the task is semantic parsing, since the targets may be formal meaning representations
+like $\lambda$-calculus~\citep{} or $\lambda$-DCS~\citep{}, or domain specific
+meaning representations like in the case of~\citep{}, or even programming
+languages~\citep{}. This distinction lets us make efficient task-specific
+modeling choices: When the target is a formal language, we can easily define a
+grammar that disallows illegal sequences of target-side tokens, and
+explicitly incorporate that grammar into the decoder. That way, the decoder will
+only score valid target-token sequences.
+
+\begin{figure}
+	\begin{center}
+		\includegraphics[width=4in]{figures/wikitables_example2.png}
+		\caption{Example context from
+		\WTQ~\citep{pasupat2015compositional}}\label{fig:wikitables_reasoning_example}
+	\end{center}
+\end{figure}
+Consider
+Figure~\ref{fig:wikitables_reasoning_example}, which shows part of a table that
+provides context for answering some questions in the \WTQ dataset. One of the
+questions is \textit{Which athlete was from South Korea after the year 2010?}
+When we build a semantic parser for this dataset, the model learns to map
+questions like these to corresponding logical forms like the following:
+\begin{quote}
+	\texttt{((reverse athlete) (and (nation south\_korea) (year ((reverse
+	date) (>= 2010-mm-dd) ))))}
+\end{quote}
+If we used a seq2seq model for this task, and simply defined the target
+vocabulary to contain tokens like \{\texttt{(}, \texttt{reverse},
+\texttt{athlete}, \texttt{>=}, \ldots, \texttt{)}\}, then that would let the
+model produce any sequence of those tokens, including even those that are
+syntactically invalid (say with mismatched parentheses), or semantically invalid
+(say with the functions in the logical form taking arguments of incorrect
+types). Given enough data, the model could learn to assign lower scores to such
+sequences. But the model still has to spend some learning capacity on
+distinguishing valid sequences from invalid ones, while we could easily encode
+the knowledge required to make that distinction as hard constraints, in the form
+of a grammar. In this chapter we show that doing so makes the model learn the
+difficult aspects of the problem more effectively.
+
+\section{Need for Entity Linking}
+
+
 
 Recent work has shown that recurrent neural networks can be used for semantic parsing by encoding the question
 then predicting each token of the logical form in sequence \cite{jia2016,dong2016}.
@@ -20,13 +82,13 @@ This grammar is automatically induced from typed logical forms, and does not req
 Second, the encoder incorporates an entity linking and embedding module that enables it to learn to identify which question spans should be linked to entities.
 Finally, we also introduce a new approach for training neural semantic parsers from question-answer supervision.
 
-We evaluate our parser on \wikitables{}, a challenging data set for question answering against semi-structured Wikipedia tables \cite{pasupat2015}.
+We evaluate our parser on \WTQ, a challenging data set for question answering against semi-structured Wikipedia tables \cite{pasupat2015}.
 This data set has a broad variety of entities and relations across different tables, along with complex questions that necessitate long logical forms.
 On this data set, our parser achieves a question answering accuracy of 43.3\% and an ensemble of 5 parsers achieves 45.9\%, both of which outperform the
 previous state-of-the-art of 38.7\% set by an ensemble of 15 models \cite{haug2017}. We further perform several ablation studies that demonstrate the
 importance of both type constraints and entity linking to achieving high accuracy on this task.
 
-\section{Type Constrained Neural Semantic Parser}
+\section{Grammar-Constrained Neural Semantic Parser}
 \begin{figure}
 \centering
 \includegraphics[width=6in]{figures/type_constrained_nnsp.png}

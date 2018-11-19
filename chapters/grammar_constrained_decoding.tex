@@ -1,18 +1,28 @@
 In this chapter, we present an application of knowledge-guided reasoning. We
 build a neural semantic parser for question answering over a challenging
-dataset, and show how the model benefits from additional knowledge.
-In particular, we will discuss how sequence-to-sequence models, which have
-been shown to work very well for modeling sequences in language, should be
-adapted to work for semantic parsing. We modify the decoder
-in an encoder-decoder model to:
+dataset, and show how the model benefits from additional knowledge.  In
+particular, we will discuss how sequence-to-sequence models, which have been
+shown to work very well for modeling sequences in language, should be adapted to
+work for semantic parsing.  Recent work has shown that such models can be used
+for semantic parsing by encoding the question then predicting each token of the
+logical form in sequence~\citep{jia2016,dong2016}.  These approaches, while
+effective, have two major limitations.  First, they treat the logical form as an
+unstructured sequence, thereby ignoring type constraints on well-formed
+programs.  Second, they do not deal with entity linking, which is a critical
+sub-problem of semantic parsing~\citep{yih2015stagg}.  To address these issues,
+we modify the encoder-decoder model to:
 \begin{enumerate}
-	\item Only produce syntactically and semantically valid logical forms
-	\item Score previously unseen entities by linking them to tokens in the
-		utterance.
+	\item Constrain the decoder to only produce syntactically and semantically
+		valid logical forms
+	\item Incorporate context-awareness into the encoder, and entity linking
+		into the decoder, to effectively score previously
+		unseen entities by linking them to tokens in the
+		utterance, and jointly train these entity embedding anr linking
+		modules from QA supervision.
 \end{enumerate}
-As described in Chapter~\ref{chapter:reasoning_related_work}, 
-we assume that the supervision the model gets is only from the answers at the
-end (i.e., our semantic parser is weakly supervised). However, the two main
+We assume weak supervision, and train using Static MML (see Section~\ref{sec:mml})
+on pairs of questions and approximate sets of logical forms that yield the correct answer,
+but are not necessarily true translations of the questions. However, the two main
 contributions of this chapter are also applicable to the fully supervised setup.
 We now describe in detail the problems we solve in this chapter.
 
@@ -27,10 +37,16 @@ control~\citep[for one]{ficler2017controlling}. In all these cases, and also mos
 other cases where encoder-decoder models are used for transducing language
 inputs, the targets are in natural language as well. That is not the case when
 the task is semantic parsing, since the targets may be formal meaning representations
-like $\lambda$-calculus~\citep{} or $\lambda$-DCS~\citep{}, or domain specific
-meaning representations like in the case of~\citep{}, or even programming
-languages~\citep{}. This distinction lets us make efficient task-specific
-modeling choices: When the target is a formal language, we can easily define a
+like
+$\lambda$-calculus~\citep{Zettlemoyer2005LearningTM,zettlemoyer2007online,kwiatkowski2011lexical}
+or
+$\lambda$-DCS~\citep{liang2011learning,berant2014semantic,wang2015,pasupat2015compositional},
+or domain specific meaning
+representations~\citep{dahl1994,Zelle1996LearningTP,kate2005learning}, or even programming
+languages~\citep{yin17acl,rabinovich17acl,iyer2017learning,suhr2018learning}.
+This distinction
+lets us make an efficient task-specific
+modeling choice. When the target is a formal language, we can easily define a
 grammar that disallows illegal sequences of target-side tokens, and
 explicitly incorporate that grammar into the decoder. That way, the decoder will
 only score valid target-token sequences.
@@ -39,12 +55,12 @@ only score valid target-token sequences.
 	\begin{center}
 		\includegraphics[width=4in]{figures/wikitables_example2.png}
 		\caption{Example context from
-		\WTQ~\citep{pasupat2015compositional}}\label{fig:wikitables_reasoning_example}
+		\WTQ{}~\citep{pasupat2015compositional}}\label{fig:wikitables_reasoning_example}
 	\end{center}
 \end{figure}
 Consider
 Figure~\ref{fig:wikitables_reasoning_example}, which shows part of a table that
-provides context for answering some questions in the \WTQ dataset. One of the
+provides context for answering some questions in the \WTQ{} dataset. One of the
 questions is \textit{Which athlete was from South Korea after the year 2010?}
 When we build a semantic parser for this dataset, the model learns to map
 questions like these to corresponding logical forms like the following:
@@ -53,8 +69,8 @@ questions like these to corresponding logical forms like the following:
 	date) (>= 2010-mm-dd) ))))}
 \end{quote}
 If we used a seq2seq model for this task, and simply defined the target
-vocabulary to contain tokens like \{\texttt{(}, \texttt{reverse},
-\texttt{athlete}, \texttt{>=}, \ldots, \texttt{)}\}, then that would let the
+vocabulary to be tokens like \{\texttt{(}, \texttt{)}, \texttt{reverse},
+\texttt{athlete}, \texttt{>=}, \ldots\}, then that would let the
 model produce any sequence of those tokens, including even those that are
 syntactically invalid (say with mismatched parentheses), or semantically invalid
 (say with the functions in the logical form taking arguments of incorrect
@@ -62,38 +78,57 @@ types). Given enough data, the model could learn to assign lower scores to such
 sequences. But the model still has to spend some learning capacity on
 distinguishing valid sequences from invalid ones, while we could easily encode
 the knowledge required to make that distinction as hard constraints, in the form
-of a grammar. In this chapter we show that doing so makes the model learn the
-difficult aspects of the problem more effectively.
+of a grammar. In this chapter we show that doing so lets the model learn the
+difficult aspects of the semantic parsing more effectively. Using a grammar that
+is automatically induced from the types of predicates and entities used in
+logical forms, we transform the decoder into a transition based transducer
+(i.e., instead of producing tokens like the ones shown above, the decoder
+produces transition actions from the grammar that incrementally build the
+logical form top down; details in Section~\ref{sec:nnsp_decoder}, and an example
+in Figure~\ref{fig:grammar_derivation}.)
 
 \section{Need for Entity Linking}
+While building semantic parsers for unrestricted domains like Wikipedia tables
+(which is the case with \WTQ{}), one of the most important challenges is to
+having to deal with previously unseen entities. This problem gets exacerbated when
+the model also learns representations for input tokens, since we will not have
+enough training data to learn representations for most of the entities the model
+encounters at test time.
+
+To deal with this issue, we first embed a knowledge graph extracted from the
+table that provides context to answer a given question, such that entities in
+the graph are embedded as a function of their type and neighborhood. Second, we
+make the encoded representations of the question context-aware, by augmenting
+the input representations of the tokens with a \emph{link embedding}, which is
+an expected value of all the entities to which the given token can be softly
+linked\footnote{Note that this idea is very similar to the one we used to
+obtain ontology grounded token representations in Chapter~\ref{chapter:ontolstm}}.
+Third, we include an attention based entity linking module in the decoder, and
+score transitions that produce table-specific entities using using this module,
+thus effectively side-stepping having to learn representations for them.
 
 
+We train our model using the Static MML objective. As described in Section~\ref{sec:mml} in
+Chapter~\ref{chapter:reasoning_related_work}, the objective
+relies on a precomputed set of approximate logical forms that produce the
+correct answer, but are not necessarily true translations of the question. We
+use Dynamic Programming on Denotations (DPD) followed by pruning based on human
+annotations on fictitious tables, as described in~\cite{pasupat2016inferring} to
+obtain that set.
 
-Recent work has shown that recurrent neural networks can be used for semantic parsing by encoding the question
-then predicting each token of the logical form in sequence \cite{jia2016,dong2016}.
-These approaches, while effective, have two major limitations.
-First, they treat the logical form as an unstructured sequence, thereby ignoring type constraints on well-formed programs.
-Second, they do not address entity linking, which is a critical subproblem of semantic parsing \cite{yih2015stagg}.
-
-This chapter introduces a novel neural semantic parsing model that addresses these limitations of prior work.
-Our parser uses an encoder-decoder architecture with two key innovations.
-First, the decoder generates from a grammar that guarantees that generated logical forms are well-typed.
-This grammar is automatically induced from typed logical forms, and does not require any manual engineering to produce. 
-Second, the encoder incorporates an entity linking and embedding module that enables it to learn to identify which question spans should be linked to entities.
-Finally, we also introduce a new approach for training neural semantic parsers from question-answer supervision.
-
-We evaluate our parser on \WTQ, a challenging data set for question answering against semi-structured Wikipedia tables \cite{pasupat2015}.
-This data set has a broad variety of entities and relations across different tables, along with complex questions that necessitate long logical forms.
-On this data set, our parser achieves a question answering accuracy of 43.3\% and an ensemble of 5 parsers achieves 45.9\%, both of which outperform the
-previous state-of-the-art of 38.7\% set by an ensemble of 15 models \cite{haug2017}. We further perform several ablation studies that demonstrate the
-importance of both type constraints and entity linking to achieving high accuracy on this task.
+We evaluate our parser on \WTQ{}.  This data set has
+a broad variety of entities and relations across different tables, along with
+complex questions that necessitate long logical forms.  On this data set, our
+parser achieves a question answering accuracy of 43.3\% and an ensemble of 5
+parsers achieves 45.9\%.  We further perform
+several ablation studies that demonstrate the importance of both grammar
+constraints and entity linking to achieving high accuracy on this task.
 
 \section{Grammar-Constrained Neural Semantic Parser}
 \begin{figure}
 \centering
 \includegraphics[width=6in]{figures/type_constrained_nnsp.png}
-\caption{Overview of our type-constrained neural semantic parsing model}
-\label{fig:nnsp_model}
+\caption{Overview of our type-constrained neural semantic parsing model}\label{fig:nnsp_model}
 \end{figure}
 
 This section describes our semantic parsing model.
@@ -125,13 +160,12 @@ objective function makes it possible to train neural models with
 question-answer supervision, which is otherwise difficult for efficiency and 
 gradient variance reasons.
 
-\subsection{Encoder}
-\label{sec:nnsp_encoder}
+\subsection{Encoder}\label{sec:nnsp_encoder}
 
 The encoder network is a standard bidirectional LSTM augmented with an entity 
 embedding and linking module.
 
-\paragraph{Notation.}
+\paragraph{Notation}
 Throughout this section, we denote entities as $e$, and their corresponding 
 types as $\tau(e)$. The $i^{\text{th}}$ token in a question is denoted $q_i$. 
 We use $v_w$ to denote a learned vector representation (embedding) of word $w$, 
@@ -140,7 +174,7 @@ Finally, we denote the set of all entities as $E$, and all entities belonging
 to a type $\tau$ as $E_{\tau}$. The entities $E$ include all of the entities 
 from the table, as well as numeric entities detected in the question by NER. 
 
-\paragraph{Entity Embedding.}
+\paragraph{Entity Embedding}
 The encoder first constructs an embedding for each entity in the knowledge 
 graph given its type and position in the graph. 
 Let $W(e)$ denote the set of words in the name of entity $e$ and $N(e)$ the 
@@ -157,7 +191,7 @@ $v_{N(e)}$ is simply an average of the word vectors in the names of $e$'s
 neighbors. $P_\tau$ and $P_N$ are learned parameter matrices for combining 
 these two vectors.
 
-\paragraph{Entity Linking.}
+\paragraph{Entity Linking}
 This module generates a \emph{link embedding} $l_{i}$ for each question token 
 representing the entities it links to.
 The first part of this module generates an entity linking score $s(e,i)$ 
@@ -197,7 +231,7 @@ p(e | i, \tau) & = \frac{\exp{s(e,i)}}{\sum_{e'\in E_\tau \cup \{\varnothing\}}
 l_{i} & = \sum_\tau \sum_{e \in E_\tau} r_e p(e | i, \tau)
 \end{align}
 
-\paragraph{Bidirectional LSTM.}
+\paragraph{Bidirectional LSTM}
 We concatenate the link embedding $l_i$ and the word embedding $v_{q_i}$ of 
 each token in the question, and feed them into a bidirectional LSTM:
 
@@ -218,7 +252,7 @@ initialize the decoder.
 The decoder is an LSTM with attention that selects parsing actions from a 
 grammar over well-typed logical forms.
 
-\paragraph{Type-Constrained Grammar.} The parser maintains a state at each step 
+\paragraph{Type-Constrained Grammar} The parser maintains a state at each step 
 of decoding that consists of a logical form with typed \emph{holes}.
 A hole is a tuple \hole{\tau}{\Gamma} of a type $\tau$ and a \emph{scope} 
 $\Gamma$ that contains typed variable bindings, $(x:\alpha) \in \Gamma$.
@@ -234,7 +268,8 @@ We also permit applications with more than one argument.
     \item \textbf{Constant} \hole{\tau}{\Gamma}$\rightarrow$\pred{const} where 
 constant \pred{const} has type \type{\tau}. This rule generates both 
 context-independent operations such as \pred{argmax} and context-specific 
-entities such as \pred{united\_states}.
+entities such as\\
+\pred{united\_states}.
     \item \textbf{Lambda} \hole{\func{\alpha}{\tau}}{\Gamma}$\rightarrow 
 \lambda x$. \hole{\tau}{\Gamma \cup \{(x : \alpha)\}} generates a lambda 
 expression where the argument has type \type{\alpha}. $x$ is a fresh variable 
@@ -266,8 +301,7 @@ context-independent grammar.
 \caption{The derivation of a logical form using the  type-constrained grammar. 
 The holes in the left column have 
 empty scope, while holes in the right column have scope $\Gamma = \{(x : 
-\type{r})\}$}
-\label{fig:grammar_derivation}
+\type{r})\}$}\label{fig:grammar_derivation}
 \end{figure}
 
 The first action of the parser is to predict a root type for the logical form, 
@@ -277,7 +311,7 @@ decoding terminates when no holes remain.
 Figure~\ref{fig:grammar_derivation} shows the sequence of decoder actions used 
 to generate a logical form.
 
-\paragraph{Network Architecture.} The decoder is an LSTM that outputs a 
+\paragraph{Network Architecture} The decoder is an LSTM that outputs a 
 distribution over grammar actions using an attention mechanism over the encoded 
 question tokens. The decoder also uses a copy-like mechanism on the entity 
 linking scores to generate entities.
@@ -316,17 +350,16 @@ chosen, $g_{j}$ is a learned parameter vector for that action. Otherwise $g_{j}
 with type $\tau$.
 
 
-\section{Experiments with \textsc{WikiTableQuestions}}
-We now describe an application of our framework to \textsc{WikiTableQuestions}, 
+\section{Experiments with \WTQ{}}
+We now describe an application of our framework to \WTQ{}, 
 a challenging dataset for question
-answering against semi-structured Wikipedia tables 
-\citep{pasupat2015compositional}. An example question from this dataset
-is shown in Figure~\ref{fig:wikitables_example}.
+answering against semi-structured Wikipedia
+tables~\citep{pasupat2015compositional}. An example question from this dataset
+is shown in Figure~\ref{fig:wikitables_reasoning_example}.
 
-\subsection{Context and Logical Form Representation}
-\label{sec:preliminaries}
+\subsection{Context and Logical Form Representation}\label{sec:preliminaries}
 
-We follow \cite{pasupat2015compositional} in using the same table structure 
+We follow~\citep{pasupat2015compositional} in using the same table structure 
 representation 
 and $\lambda$-DCS language for expressing logical forms.
 In this representation, tables are expressed as knowledge graphs over 6 types 
@@ -374,12 +407,11 @@ have
 type variables, but rather a fixed number of concrete instances -- such as 
 \func{\func{c}{r}}{\func{r}{c}} -- of the above polymorphic type.}
 The parser assigns every $\lambda$-DCS constant a type, then applies standard 
-programming language type inference algorithms \citep{Pierce2002TypesAP} to 
+programming language type inference algorithms~\citep{Pierce2002TypesAP} to 
 automatically assign types to larger expressions.
 
-\subsection{DPD Training}
+\subsection{Training with Offline Search}
 \label{sec:nnsp_training}
-
 Our parser is trained from question-answer pairs, treating logical forms as a 
 latent variable. We use a new loglikelihood objective function for this process 
 that first automatically enumerates a set of correct logical forms for each 
@@ -388,17 +420,17 @@ search problem during training and is well-suited to training our neural model.
 
 The training data consists of a collection of $n$ question-answer-table 
 triples, 
-$\{(q^i, a^i, T^i)\}_{i=1}^n$. We first run dynamic programming on denotations 
-\citep{pasupat2016inferring} on each table $T^i$ and answer $a^i$ to generate a 
+$\{(q^i, a^i, T^i)\}_{i=1}^n$. We first run dynamic programming on
+denotations~\citep{pasupat2016inferring} on each table $T^i$ and answer $a^i$ to generate a 
 set of 
 logical forms $\ell \in \mathcal{L}^i$ that execute to the correct answer.
 
-\paragraph{Dynamic programming on denotations.} DPD is an automatic procedure for enumerating 
-logical forms that execute to produce a particular value; it leverages the 
+\paragraph{Dynamic programming on denotations}
+DPD is an automatic procedure for enumerating logical forms that execute to produce a particular value; it leverages the 
 observation that there are fewer denotations than logical forms to enumerate 
 this set relatively efficiently. It is a kind of chart parsing algorithm where
 partial parses are grouped together in cells by their output category, size, and
-the denotation. This is an improvement over the previous work by \cite{pasupat2015compositional},
+the denotation. This is an improvement over the previous work by~\cite{pasupat2015compositional},
 where the logical forms were grouped based on only the output category and size.
 Given this chart, DPD performs two forward passes, In the first pass, the algorithm
 finds all the cells that lead to the correct denotation. In the second pass, all the
@@ -406,8 +438,16 @@ rule combinations which lead to the cell corresponding to the correct denotation
 are listed, and logical forms are generated from those cells, using only the rule combinations
 that are known to lead to the final cells.
 
-Given the logical forms generated from DPD, we train the model 
-with the following objective: 
+Followed by this
+process,~\cite{pasupat2016inferring} also prune the resulting logical forms
+to remove spurious ones. Recall that as described in
+Section~\ref{sec:weak_supervision}, spurious logical forms are those that yield
+the correct answer, but only coincidentally so, since they are not true
+translations of the original questions. The insight behind the pruning process
+is that a correct logical form will produce the correct logical form even if the
+contents of the table are are shuffled around, whereas a spurious one may not
+(see the original paper for more details). We use the filtered set of logical
+forms, and train the model with the following Static MML objective: 
 
 \begin{align}
     \mathcal{O}(\theta) & = \sum_{i=1}^n \log \sum_{\ell \in \mathcal{L}^i} 
@@ -429,7 +469,7 @@ with a beam of $k=5$ to approximate the sum.
 
 We briefly contrast this objective function with two other commonly-used 
 approaches. The first approach is commonly used in prior semantic parsing work 
-with loglinear models \citep{Liang2011LearningDC,pasupat2015compositional} and 
+with loglinear models~\citep{Liang2011LearningDC,pasupat2015compositional} and 
 uses a similar 
 loglikelihood objective. The gradient computation for this objective requires 
 running a wide beam search, generating, e.g., 300 logical forms, executing each 
@@ -437,8 +477,8 @@ one to identify which are correct, then backpropagating through a term for
 each. 
 This process would be very expensive with a neural model due to the cost of 
 each 
-backpropagation pass. Another approach is to train the network with REINFORCE 
-\citep{williams1992simple}, which essentially samples a logical form instead of 
+backpropagation pass. Another approach is to train the network with
+REINFORCE~\citep{williams1992simple}, which essentially samples a logical form instead of 
 using 
 beam search. This approach is known to be difficult to apply when the space of 
 latent variables is large and the reward signal sparse, as it is in semantic 
@@ -481,53 +521,69 @@ Table~\ref{tab:nnsp_wikitables_results} compares the accuracy of our semantic pa
 to prior work on \textsc{WikiTableQuestions}.
 We distinguish between single models and ensembles, as we expect ensembling to 
 improve accuracy, but not all prior work has used it.
-Prior work on this data set includes a loglinear semantic parser 
-\citep{pasupat2015compositional}, that same parser with a neural, paraphrase-based reranker 
-\citep{haug2017neural}, and a neural programmer that answers questions by predicting a 
-sequence of table operations \citep{Neelakantan2016LearningAN}.  
+Prior work on this data set includes a loglinear semantic
+parser~\citep{pasupat2015compositional}, that same parser with a neural,
+paraphrase-based
+reranker~\citep{haug2017neural}, and a neural programmer that answers questions by predicting a 
+sequence of table operations~\citep{Neelakantan2016LearningAN}.  
 We find that our parser outperforms the best prior result on this data set by 
 4.6\%, despite that prior result using a 15-model ensemble.
 An ensemble of 5 parsers, one per training fold, improves accuracy by an 
 additional 2.6\% for a total improvement of 7.2\%.
 \begin{table}
     \centering
-    \begin{tabular}{|l|c|c|c|}
-	\hline
+    \begin{tabular}{lccc}
+	\toprule
         \textbf{Model} & \textbf{Ensemble Size} & \textbf{Dev.} & \textbf{Test} \\
-        \hline 
+        \midrule 
         \cite{Neelakantan2016LearningAN} & 1 & 34.1 & 34.2 \\
         \cite{haug2017neural} & 1 & - & 34.8 \\
         \cite{pasupat2015compositional} & 1 & 37.0 & 37.1 \\
         \cite{Neelakantan2016LearningAN} & 15 & 37.5 & 37.7 \\
         \cite{haug2017neural} & 15 & - & 38.7 \\
-        \hline
+        \midrule
         Our Parser & 1 & 42.7 & 43.3 \\
         Our Parser & 5 & - & \textbf{45.9} \\
-        \hline
+        \bottomrule
     \end{tabular}
-    \caption{Development and test set accuracy of our semantic parser compared to prior work on \textsc{WikiTableQuestions}}
-    \label{tab:nnsp_wikitables_results}
+    \caption{Development and test set accuracy of our semantic parser compared
+	to prior work on \textsc{WikiTableQuestions}}\label{tab:nnsp_wikitables_results}
 \end{table}
 
-This ensemble was constructed by averaging the logical form probabilities of parsers trained on each of the 5 cross-validation folds.
-Note that this ensemble is trained on the entire training set -- the development data from one fold is training data
-for the others -- so we therefore cannot report its development accuracy.
-We investigate the sources of this accuracy improvement in the remainder of this section via ablation experiments.
+This ensemble was constructed by averaging the logical form probabilities of
+parsers trained on each of the 5 cross-validation folds.  Note that this
+ensemble is trained on the entire training set --- the development data from one
+fold is training data for the others --- so we therefore cannot report its
+development accuracy.  We investigate the sources of this accuracy improvement
+in the remainder of this section via ablation experiments.
 
 \subsection{Type Constraints}
 
-Our second experiment measures the importance of type constraints on the decoder by comparing it to sequence-to-sequence (seq2seq) and sequence-to-tree (seq2tree) models.
-The seq2seq model generates the logical form a token at a time, e.g., $[ (, (,$\pred{reverse}$, ... ]$,
-and has been used in several recent neural semantic parsers \cite{jia2016,dong2016}.
-The seq2tree model improves on the seq2seq model by including an action for generating matched parentheses, then recursively generating the subtree within \cite{dong2016}.
-These baseline models use the same network architecture (including entity embedding and linking) and training regime as our parser, but assign every constant the same type and have a different grammar in the decoder.
-These models were implemented by preprocessing logical forms and applying a different type system.
+Our second experiment measures the importance of type constraints on the decoder
+by comparing it to sequence-to-sequence (seq2seq) and sequence-to-tree
+(seq2tree) models.  The seq2seq model generates the logical form a token at a
+time, e.g., $[ (, (,$\pred{reverse}$,\ldots]$, and has been used in several
+recent neural semantic parsers~\citep{jia2016,dong2016}.  The seq2tree model
+improves on the seq2seq model by including an action for generating matched
+parentheses, then recursively generating the subtree within~\citep{dong2016}.
+These baseline models use the same network architecture (including entity
+embedding and linking) and training regime as our parser, but assign every
+constant the same type and have a different grammar in the decoder.  These
+models were implemented by preprocessing logical forms and applying a different
+type system.
 
-Table~\ref{tab:typing_results} compares the accuracy of our parser to both the seq2seq and seq2tree baselines.
-Both of these models perform considerably worse than our parser, demonstrating the importance of type constraints during decoding. 
-Interestingly, we found that both baselines typically generate well-formed logical forms: only 7.4\% of seq2seq and 6.6\% of seq2tree's predicted logical forms failed to execute.
-Type constraints prevent these errors from occurring in our parser, though the relatively small number of such errors does not does not seem to fully explain the 9\% accuracy improvement.
-We hypothesize that the additional improvement occurs because type constraints also increase the effective capacity of the model, as both the seq2seq and seq2tree models must use some of their capacity to learn the type constraints on logical forms.
+Table~\ref{tab:typing_results} compares the accuracy of our parser to both the
+seq2seq and seq2tree baselines.  Both of these models perform considerably worse
+than our parser, demonstrating the importance of type constraints during
+decoding.  Interestingly, we found that both baselines typically generate
+well-formed logical forms: only 7.4\% of seq2seq and 6.6\% of seq2tree's
+predicted logical forms failed to execute.  Type constraints prevent these
+errors from occurring in our parser, though the relatively small number of such
+errors does not does not seem to fully explain the 9\% accuracy improvement.  We
+hypothesize that the additional improvement occurs because type constraints also
+increase the effective capacity of the model, as both the seq2seq and seq2tree
+models must use some of their capacity to learn the type constraints on logical
+forms.
 
 \begin{table}[]
 	\centering
@@ -537,34 +593,52 @@ We hypothesize that the additional improvement occurs because type constraints a
 	seq2tree & 31.6 \\
 	Our Parser & 42.7 \\ \bottomrule
 	\end{tabular}
-	\caption{Development accuracy of our semantic parser compared to sequence-to-sequence and sequence-to-tree models.}\label{tab:typing_results}
+	\caption{Development accuracy of our semantic parser compared to
+	sequence-to-sequence and sequence-to-tree models.}\label{tab:typing_results}
 \end{table}
 
 \subsection{Entity Embedding and Linking}
+Our next experiment measures the contribution of the entity embedding and
+linking module. We trained several ablated versions of our parser, removing both
+the embedding similarity and featurized classifier from the entity linking
+module. Table~\ref{tab:el_results} shows the accuracy of the resulting models.
+The results demonstrate that the entity linking features are important,
+particularly the more complex features beyond simple token matching. In our
+experience, the ``related column'' features are especially important for this
+data set, as columns that appear in the logical form are often not mentioned in
+the text, but rather implied by a mention of a cell from the column. Embedding
+similarity alone is not very effective, but it does improve accuracy when
+combined with the featurized classifier. We found that word embeddings enabled
+the parser to overfit, which may be due to the relatively small size of the
+training set, or because we did not use pretrained embeddings. Incorporating
+pretrained embeddings is an area for future work.
 
-Our next experiment measures the contribution of the entity embedding and linking module. We trained several ablated versions of our parser,
-removing both the embedding similarity and featurized classifier from the entity linking module. Table~\ref{tab:el_results} shows the accuracy
-of the resulting models. The results demonstrate that the entity linking features are important, particularly the more complex features beyond simple token matching. In our experience, the ``related column'' features are especially important for this data set, as columns that appear in the logical form are often not mentioned in the text, but rather implied by a mention of a cell from the column. Embedding similarity alone is not very effective, but it does improve accuracy when combined with the featurized classifier. We found that word embeddings enabled the parser to overfit, which may be due to the relatively small size of the training set, or because we did not use pretrained embeddings. Incorporating pretrained embeddings is an area for future work.
-
-We also examined the effect of the entity embeddings computed using each entity's knowledge graph context by replacing them with one-hot vectors for the entity's type. The accuracy of this parser dropped from 42.7\% to 41.8\%, demonstrating that the knowledge graph embeddings help.
+We also examined the effect of the entity embeddings computed using each
+entity's knowledge graph context by replacing them with one-hot vectors for the
+entity's type. The accuracy of this parser dropped from 42.7\% to 41.8\%,
+demonstrating that the knowledge graph embeddings help.
 
 \begin{table}
 	\centering
 	\begin{tabular}{lc} \toprule
 	\textbf{Model} & \textbf{Dev. Accuracy} \\ \midrule 
 	Full model & 42.7 \\ 
-        ~~ w/o entity embeddings & 41.8 \\
-	~~ token features, no similarity & 28.1 \\
-	~~ all features, no similarity & 37.8 \\
-	~~ similarity only, no features & 27.5 \\ \bottomrule
+        \quad w/o entity embeddings & 41.8 \\
+	\quad token features, no similarity & 28.1 \\
+	\quad all features, no similarity & 37.8 \\
+	\quad similarity only, no features & 27.5 \\ \bottomrule
 	\end{tabular}
-	\caption{Development accuracy of ablated parser variants trained without parts of the entity linking module.}\label{tab:el_results}
+	\caption{Development accuracy of ablated parser variants
+	trained without parts of the entity linking module.}\label{tab:el_results}
 \end{table}
 
 \subsection{DPD Training}
 \label{sec:experiments_dpd}
-
-Our final experiment examines the impact on accuracy of varying the number of logical forms $m$ used when training with dynamic programming on denotations. Table \ref{tab:dpd_results} shows the development accuracy of several parsers trained with varying $m$. These results demonstrate that using more logical forms generally leads to higher accuracy.
+Our final experiment examines the impact on accuracy of varying the number of
+logical forms $m$ used when training with dynamic programming on denotations.
+Table~\ref{tab:dpd_results} shows the development accuracy of several parsers
+trained with varying $m$. These results demonstrate that using more logical
+forms generally leads to higher accuracy.
 
 \begin{table}
 	\centering
@@ -572,16 +646,55 @@ Our final experiment examines the impact on accuracy of varying the number of lo
 	\# of logical forms & 1 & 5 & 10 & 50 & 100 \\
 	Dev. Accuracy & 39.7 & 41.9 & 41.6 & 43.1 & 42.7 \\ \bottomrule
 	\end{tabular}
-	\caption{Development accuracy of our semantic parser when trained with varying numbers of logical forms produced by dynamic programming on denotations.}\label{tab:dpd_results}
+	\caption{Development accuracy of our semantic parser when trained with
+	varying numbers of logical forms produced by dynamic programming on
+	denotations.}\label{tab:dpd_results}
 \end{table}
 
 \subsection{Error Analysis}
 
-To better understand the mistakes made by our system, we analyzed a randomly selected set of 100 questions that were answered incorrectly. We identified three major classes of error:
+To better understand the mistakes made by our system, we analyzed a randomly
+selected set of 100 questions that were answered incorrectly. We identified
+three major classes of error:
 
-\paragraph{Parser errors (41\%):} These are examples where a correct logical form is available, but the parser does not select it. A large number of these errors (15\%) occur on questions that require selecting an answer from a given list of options, as in \textit{Who had more silvers, Colombia or The Bahamas?} In such cases, the type of the predicted answer is often wrong. Another common subclass is entity linking errors due to missing background knowledge (13\%), e.g., understanding that \textit{largest} implicitly refers to the \textit{Area} column.
+\paragraph{Parser errors (41\%):} These are examples where a correct logical
+form is available, but the parser does not select it. A large number of these
+errors (15\%) occur on questions that require selecting an answer from a given
+list of options, as in \textit{Who had more silvers, Colombia or The Bahamas?}
+In such cases, the type of the predicted answer is often wrong. Another common
+subclass is entity linking errors due to missing background knowledge (13\%),
+e.g., understanding that \textit{largest} implicitly refers to the \textit{Area}
+column.
 
-\paragraph{Representation failures (25\%):} The knowledge graph representation makes certain assumptions about the table structure and cell values which are sometimes wrong. One common problem is that the graph lacks some cell parts necessary to answer the question (15\%). For example, answering a question asking for a state may require splitting cell values in the \textit{Location} column into city and state names. Another common problem is unusual table structures (10\%), such as a table listing the number of Olympic medals won by each country that has a final row for the totals. These structures often cause quantifiers such as \pred{argmax} to select the wrong row.
+\paragraph{Representation failures (25\%):} The knowledge graph representation
+makes certain assumptions about the table structure and cell values which are
+sometimes wrong. One common problem is that the graph lacks some cell parts
+necessary to answer the question (15\%). For example, answering a question
+asking for a state may require splitting cell values in the \textit{Location}
+column into city and state names. Another common problem is unusual table
+structures (10\%), such as a table listing the number of Olympic medals won by
+each country that has a final row for the totals. These structures often cause
+quantifiers such as \pred{argmax} to select the wrong row.
 
-\paragraph{Unsupported operations (11\%):} These are examples where the logical form language lacks a necessary function. Examples of missing functions are finding consecutive sets of values, computing percentages and performing string operations on cell values.
+\paragraph{Unsupported operations (11\%):} These are examples where the logical
+form language lacks a necessary function. Examples of missing functions are
+finding consecutive sets of values, computing percentages and performing string
+operations on cell values.
 
+\section{Conclusion}
+We introduced in this chapter, two ways to incorporate contextual knowledge into
+building neural semantic parsers: grammar constrained
+decoding, and context linking. As evidenced by the fact that our
+grammar-constrained model out performs seq2seq and seq2tree models trained on
+the same data, the constraints provide a useful inductive bias. Moreover, that
+the most of the logical forms produced by trained seq2seq and seq2tree models
+are also executable, shows that grammar constraints free our model from having
+to distinguish valid logical forms from invalid ones, and instead let it learn
+deeper semantics. Our joint entity embedding and linking module provides an
+effective way to sidestep the issue of having to learn representations for
+previously unseen entities.
+
+While our model is weakly supervised, it still assumes a good set of
+offline searched logical forms, and we relied on the output from DPD, pruned
+using human annotations. In Chapter~\ref{chapter:nlvr}, we further relax this
+assumption, and in doing so leverage more contextual knowledge.

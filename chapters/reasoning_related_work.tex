@@ -133,7 +133,7 @@ do).
 The parser we describe in Chapter~\ref{chapter:wikitables} explicitly includes
 an entity linking module that enables it to model the highly ambiguous and
 implicit entity mentions in
-\WTQ~\cite{pasupat2015compositional}.
+\WTQ{}~\cite{pasupat2015compositional}.
 
 \paragraph{Complexity of contexts and questions} Early work that used
 semantic parsing dealt with data
@@ -141,12 +141,12 @@ sets such as \textsc{GeoQuery}~\citep{zelle1996} and
 \textsc{ATIS}~\citep{dahl1994}.
 They have small domains with only a handful of different predicates.
 Some of the more recent data sets for question answering against Freebase have
-a much broader domain, but simple questions~\citep{berant2013,cai2013}. \WTQ,
+a much broader domain, but simple questions~\citep{berant2013,cai2013}. \WTQ{},
 one of the datasets we work with in this thesis, is both general domain and
 comes with complex questions that require nested reasoning, leading to
 highly compositional logical forms.
 
-\section{Weak Supervision}
+\section{Weak Supervision}\label{sec:weak_supervision}
 Semantic parsers can be trained from labeled logical forms~\citep{zelle1996,zettlemoyer05}
 or question-answer pairs~\citep{liang2011learning,berant2013}.
 In terms of creating datasets, question-answer
@@ -165,9 +165,57 @@ logical forms from denotations~\citep{pasupat2016inferring}. However, matching
 the performance of a fully supervised semantic parser with only weak
 supervision remains a significant challenge~\citep{Yih2016TheVO}.
 
-We now describe prior techniques for training semantic parsers with
-weak supervision: maximizing marginal likelihood, structured learning
-algorithms, and reinforcement learning techniques.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=4in]{figures/wikitables_example.png}
+	\caption{Example from \WTQ{}, a dataset that does not provide
+	logical form supervision}\label{fig:wikitables_example_weaksup}
+\end{figure}
+
+\paragraph{Spuriousness} The most serious challenge in building semantic parsers
+with supervision only from denotations is that the search for logical forms
+results in a large set of those that execute to the correct denotation, but only
+coincidentally so. These are commonly referred to as spurious logical forms.
+
+The issue is illustrated by the example from \WTQ{} shown in
+Figure~\ref{fig:wikitables_example_weaksup}.
+If we searched for logical forms that execute to
+the correct answer (i.e., $4$), we will end up with several logical forms like
+the following:
+
+\begin{itemize}
+	\item \texttt{(sum ((reverse total) (rank 8)))}
+	\item \texttt{(sum ((reverse bronze) (rank 8)))}
+	\item \texttt{((reverse bronze) (nation colombia))}
+	\item \texttt{(count (gold 0))}
+\end{itemize}
+
+The logical form language here (and in Chapter~\ref{chapter:wikitables}) is the
+$\lambda$-DCS based language introduced by~\cite{pasupat2015compositional} for
+\WTQ{}. The column names are (directed) relations from cells to rows. So
+\texttt{(gold 0)} refers to all the rows where the \emph{Gold} column contains
+$0$. Given this, it can be see that the first logical form above is the true
+translation of the question in Figure~\ref{fig:wikitables_example_weaksup},
+whereas the second one returns the total number of \emph{Bronze} medals won by
+\emph{Nations} ranked \emph{8}, the third one returns the number of \emph{Bronze}
+medals won by \emph{Colombia}, and the last one returns the number of
+\emph{Nations} that won $0$ \emph{Gold} medals, all of which return the correct
+answer $4$. In fact, an exhaustive search could easily return several hundreds
+of such logical forms, most of which will not be translations of original
+question. Depending on the amount of supervision provided by the denotations,
+this issue could be even more serious. For example, in the NLVR
+dataset~\citep{suhr2017corpus} (one of the datasets we evaluate on in
+Chapter~\ref{chapter:nlvr}), the denotations are binary (True or False), and
+in that case, any random logical form will have a $50\%$ chance of executing to
+the correct answer.
+
+Training a semantic parser on such data will cause the model to quickly overfit to
+training examples, and the algorithm used should be designed in such a way that
+the model is biased away from spurious logical forms. We now describe prior
+techniques used for training semantic parsers with
+weak supervision, and comment on how the issue of spuriousness can be handled in
+each of them.
 
 \subsection{Maximum marginal likelihood training}\label{sec:mml}
 Most work on training semantic parsers from denotations maximizes the
@@ -222,7 +270,7 @@ searches a very large space of logical forms without any training signal until
 its random search happens upon a correct logical form.  Traditionally, these
 lexical cues were provided by the parser's lexicon, though with the advent of
 neural semantic parsers that remove the lexicon, new techniques for providing
-lexical hints need to be developed~\cite{goldman2017weakly}.
+lexical hints need to be developed~\citep{goldman2017weakly}.
 
 Static MML, on the other hand, relies heavily on an initial heuristic search to
 find a good set of likely logical forms that evaluate to the correct
@@ -252,7 +300,14 @@ These methods optimize the following objective:
 	\max_{\theta} \sum_{i=1}^N \sum_{y_i \sim p(y_i|x_i;\theta)} p(y_i|x_i;\theta) \mathcal{R}(y_i)
 	\label{eq:rl_objective}
 \end{equation}
-Let us now compare this objective function with the MML objective in
+
+The problem of spuriousness can be tackled by defining a reward
+function that uses some lexical or compositional cues to penalize spurious
+logical forms, or designing a policy that is explicitly biased away from them.
+For example,~\cite{liang2018memory} use a memory-augmented policy to explicitly store high
+reward programs in a memory buffer, to bias the policy towards those.
+
+Let us now compare objective function above with the MML objective in
 Equation~\ref{eq:mml_objective}. If we define a reward function:
 \begin{equation}
 	\mathcal{R}_{MML}(y_i) = 
@@ -297,7 +352,7 @@ the probabilities assigned to all logical forms on the beam.
 The fact that we can define $\mathcal{C}$ as an arbitrary cost function makes
 this objective a good choice for weakly supervised semantic parsing. This lets
 us incorporate additional knowledge to guide the training process,
-thus effectively dealing with the issue of weak supervision. In
+thus effectively dealing with the issue of spuriousness. In
 Chapter~\ref{chapter:nlvr}, we define the cost function as a linear combination
 of a coverage measure and denotation accuracy. The coverage measure scores how
 much any given logical form, $y_i$ overlaps with the functions triggered by the
@@ -325,7 +380,7 @@ Given the similarities among the objectives discussed so far, prior work has
 explored bridging objectives to exploit the benefits of each
 of them, and adapting them to specific problems.
 
-\cite{guu2017bridging} note the
+\citet{guu2017bridging} note the
 similarity between MML and RL objectives, and define a new objective that
 addresses shortcomings of both MML and RL in dealing with spurious logical forms
 when applied to weakly supervised semantic parsing. First, beam search in MML
@@ -336,7 +391,10 @@ the gradient weights in RL are proportional to their current probability,
 causing spurious paths to keep getting higher probability. They propose
 meritocratic gradient updates to ensure all programs that obtain rewards get
 upweighted equally, inspired by the fact that MML normalizes its
-``rewards'' for each example.
-
-\cite{IyyerSQA2016} bridge RL techniques with structured learning methods and
+``rewards'' for each example. \citet{IyyerSQA2016} bridge RL techniques with
+structured learning methods and
 propose a reward-guided search technique for weakly supervised semantic parsing.
+
+In Chapter~\ref{chapter:nlvr}, we describe a technique for bridging MML and
+ERM, to iteratively increase the complexity of logical forms that the parser can
+search for during training.

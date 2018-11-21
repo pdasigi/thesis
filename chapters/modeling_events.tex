@@ -1,22 +1,37 @@
-\section{Introduction}
-In this chapter, we describe a system that models background knowledge by exploiting the structure
-in inputs. As described in Chapter~\ref{chapter:introduction}, our goal is to fill the gaps in the input utterances
-by explicitly encoding commonsense information, which is usually omitted by humans. Here, we do not rely on external
-sources of knowledge, but instead exploit the information provided by co-occurrence of fillers of slots given by the structure to
-capture this knowledge. This notion was called Selectional Preference \citep{wilks1973preference}
-in earlier literature (see Chapter~\ref{chapter:encoding_related_work} for more information). While this notion was initially
-restricted to verbs and their arguments in dependency structures, we hypothesize that it extends to
-other kinds of structures as well, and consequently, it can be used for modeling appropriate implicit semantic knowledge.
+In Chapter~\ref{chapter:ontolstm}, we described how explicit symbolic knowledge
+can help build better encoders of natural language.  An assumption we made there
+is that the background knowledge needed to augment the encoder can be stated
+symbolically. Accordingly, for the tasks we built systems in
+Chapter~\ref{chapter:ontolstm}: identifying prepositional phrase attachments,
+and recognizing textual entailment, ontological information from WordNet proved
+to be useful background knowledge. In this chapter, we relax this assumption,
+and explore the use of background knowledge that is not necessarily symbolic. To
+do so, we will turn to the task of modeling newswire events. 
+The background knowledge we use is automatically acquired by
+modeling selectional preferences in predicate argument structures.
 
-This chapter shows one instantiation of background knowledge. In it, we select the appropriate structures to model selectional
-preferences. The task presented here is that of differentiating between normal news headlines and strange or weird ones,
-and the implicit knowledge required for this task is fundamental to understanding events. Hence, we obtain the structured
-representations of the input utterances from a Semantic Role Labeler, a tool which identifies the eventive predicate in a given
-input sentence, and its corresponding role fillers.
+As we described in Chapter~\ref{chapter:introduction}, our goal here is to fill
+the gaps in semantics of inputs by explicitly encoding commonsense information,
+which is usually omitted in human utterances. Here, we do not rely on external
+sources of knowledge, but instead exploit the information provided by
+co-occurrence of fillers of slots given by the structure to capture this
+knowledge. This notion was called Selectional
+Preference~\citep{wilks1973preference} in earlier literature (see
+Chapter~\ref{chapter:encoding_related_work} for more information). While this
+notion was initially restricted to verbs and their arguments in dependency
+structures, we hypothesize that it extends to other kinds of structures as well,
+and consequently, it can be used for modeling appropriate implicit semantic
+knowledge. We obtain the structured representations of the
+input utterances from a Semantic Role Labeler, a tool which identifies the
+eventive predicate in a given input sentence, and its corresponding role
+fillers. We show that the implicit background
+knowledge automatically acquired from selectional preferences is helpful in
+modeling events, by evaluating on a task that requires commonsense knowledge
+about events.
 
 \section{Understanding Events}
 Events are fundamental linguistic elements in human language. Thus understanding 
-events is a fundamental prerequisite for deeper semantic 
+events is a prerequisite for deeper semantic 
 analysis of language, and any computational system of human language should
 have a model of events. One can view an event as an occurrence of a certain 
 action caused
@@ -285,9 +300,10 @@ language model features.
 
 \section{Results}
 We merged the two anomaly classes (strange and highly unusual) and calculated accuracy and F-score (for the anomaly class) of the binary
-classifier. For the sake of comparison, we also define the following two baseline models.
+classifier. For empirical analysis, we compare against the following three
+models:
 
-\paragraph{PMI Baseline} We compare the performance of our model against a baseline that is based
+\paragraph{PMI Model} We compare the performance of our model against a baseline that is based
 on how well the semantic arguments in the event match the selectional preferences 
 of the predicate.  We measure selectional preference using Point-wise Mutual Information
 (PMI) \citep{church1990word} of the head words of each semantic argument with the predicate.  
@@ -299,7 +315,7 @@ For training our baseline classifier, we use the labeled training data from the 
 The features to this classifier are the PMI measures of the $<h_A, p>$ pairs estimated from the larger
 dataset.  The classifier thus trained to distinguish between anomalous and normal events is applied to the test set.
 
-\paragraph{LSTM Baseline} To investigate the importance of our proposed event representation, we also implemented a LSTM baseline that
+\paragraph{LSTM Model} To investigate the importance of our proposed event representation, we also implemented a LSTM baseline that
 directly encodes sentences. The following equations describe the model.
 \begin{align}
  w &= \text{LSTM}(I) \\
@@ -310,6 +326,13 @@ Note that this model is comparable in complexity, and has the same number of non
 word level composition instead of an argument-level composition in NEM, and $p_u$ is a probability distribution defined over an
 \underline{u}nstructured composition as features. Training of this baseline model is done in the same way as NEM\@.
 
+\paragraph{OntoLSTM Model} In addition to the LSTM baseline, we also compare
+against the OntoLSTM model we presented in Chapter~\ref{chapter:ontolstm}. The
+point of this comparison is to evaluate whether we gain anything by leveraging
+implicit background knowledge that cannot be provided by the kind of explicit
+background knowledge WordNet. We use the same setup for this baseline as we do
+for the LSTM model, while only changing the encode used.
+
 \begin{table}
 \begin{center}
   \begin{tabular}[c]{ccc}
@@ -318,6 +341,7 @@ word level composition instead of an argument-level composition in NEM, and $p_u
  \midrule
  PMI Baseline& 45.2\% & 45.1\%\\
  LSTM Baseline & 82.5\% & 77.4\%\\
+ OntoLSTM Baseline & \textbf{84.9\%} & 78.5\%\\
  \midrule
  NEM & \textbf{84.9\%}& \textbf{79.7\%}\\
  \bottomrule
@@ -326,11 +350,18 @@ word level composition instead of an argument-level composition in NEM, and $p_u
  \caption{Classification Performance and Comparison with Baselines}\label{table:nem_anomaly_results}
 \end{table}
 
-Table~\ref{table:nem_anomaly_results} shows the results and a comparison with the two baselines.  The accuracy of the 
-baseline classifier is lower than 50\%, which is the expected accuracy of a classifier that assigns labels randomly.  
+Table~\ref{table:nem_anomaly_results} shows the results and a comparison with
+the three baselines.
+The accuracy of the 
+PMI-based classifier is lower than 50\%, which is the expected accuracy of a classifier that assigns labels randomly.  
 As seen in the table, the LSTM model proves to be a strong baseline, but it under performs in comparison with NEM,
 showing the value of our proposed event composition model. The difference between the performance of
-NEM and the LSTM baseline is statistically significant with $p < 0.0001$. Figure~\ref{fig:nem_roc} shows the ROC curves
+NEM and the LSTM baseline is statistically significant with $p < 0.0001$.
+The OntoLSTM baseline does better than the LSTM model, but the fact that our NEM
+model still outperforms it shows that this task requires modeling implicit
+background knowledge, not all of which can be obtained from WordNet.
+
+Figure~\ref{fig:nem_roc} shows the ROC curves
 for NEM and the LSTM baseline.
 \begin{figure}
   \begin{center}
@@ -381,16 +412,15 @@ relation extraction
 \citep[among others]{mintz2009distant,sutskever2009modelling,nickel2011three,bordes2011learning,socher2013reasoning,gardner2014incorporating},
 fall under this category.
 
-There are limitations to the kind of implicit knowledge that selectional preferences over processed inputs can capture.
-There is often an unmet need for encoding factual commonsense knowledge. 
-For example, one important aspect of anomaly that is currently not handled by NEM
-is the level of generality of the concepts the events contain.  Usually
-more general concepts cause events to be more normal since they convey
-lesser information.  For example, an American soldier shooting another American
-soldier
-may be considered unusual, while a soldier shooting another soldier may not be
-as unusual, and at the 
-highest level of generalization, a person shooting another person is normal. 
-This information about generality can be incorporated into the event model only
-by using real world knowledge from knowledge bases like Wordnet \citep{miller1995wordnet}. We pursue that direction
-in Chapter~\ref{chapter:ontolstm}.
+There are limitations to the kind of implicit knowledge that selectional
+preferences over processed inputs can capture.  There is often a need for
+encoding the kinds of factual or domain-specific commonsense
+knowledge that are not eventive in nature. For example, understanding texts
+grounded in real-world information might need knowledge about the physical
+properties and limitations of objects~\citep{forbes2017verb}. Similarly, understanding procedural texts
+in a particular domain might require knowledge about state changes and
+actions~\citep{Tandon2018ReasoningAA}. These kinds of knowledge may not be
+explicitly found in knowledge bases, like the commonsense knowledge we leverage
+in this chapter. However, unlike the eventive knowledge we modeled in this
+chapter, commonsense knowledge of the two kinds above may not be extracted from text
+simply using selectional preferences.

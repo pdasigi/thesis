@@ -116,204 +116,350 @@ We first describe our grounding of word types using WordNet concepts.
 Then, we describe our model of context-sensitive token-level embeddings as a weighted sum of WordNet concept embeddings. 
 
 \subsection{WordNet Grounding}
-We use WordNet to map each word type to a set of synsets, including possible generalizations or abstractions. 
-Among the labeled relations defined in WordNet between different synsets, we focus on the hypernymy relation to help model generalization and selectional preferences between words, which is especially important for predicting PP attachments \citep{resnik:93}.
-To ground a word type, we identify the set of (direct and indirect) hypernyms of the WordNet senses of that word.
-A simplified grounding of the word `pool' is illustrated in Figure~\ref{fig:ontolstm_wordnet_grounding}.
-This grounding is key to our model of token embeddings, to be described in the following subsections. 
+We use WordNet to map each word type to a set of synsets, including possible
+generalizations or abstractions.  Among the labeled relations defined in WordNet
+between different synsets, we focus on the hypernymy relation to help model
+generalization and selectional preferences between words, which is especially
+important for predicting PP attachments \citep{resnik:93}.  To ground a word
+type, we identify the set of (direct and indirect) hypernyms of the WordNet
+senses of that word.  A simplified grounding of the word `pool' is illustrated
+in Figure~\ref{fig:ontolstm_wordnet_grounding}.  This grounding is key to our
+model of token embeddings, to be described in the following subsections. 
 
-\subsection{Context-Sensitive Token Embeddings}\label{sec:ontolstm_embedding_model}
+\subsection{Context-Sensitive Token
+Embeddings}\label{sec:ontolstm_embedding_model}
 
-Our goal is to define a context-sensitive model of token embeddings which can be used as a drop-in replacement for traditional type-level word embeddings.
+Our goal is to define a context-sensitive model of token embeddings which can be
+used as a drop-in replacement for traditional type-level word embeddings.
 
-\paragraph{Notation.}
-Let $\textit{Senses}(w)$ be the list of synsets defined as possible word senses of a given \underline{w}ord type $w$ in WordNet, and $\textit{Hypernyms}(s)$ be the list of hypernyms for a \underline{s}ynset $s$~\footnote{For notational convenience, we assume that $s \in \textit{Hypernyms}(s)$.}. Figure~\ref{fig:ontolstm_wordnet_grounding} shows an example. In the figure, solid arrows
-represent possible senses and dashed arrows represent hypernym relations. Note that the same set of concepts are used to ground the word \textit{`pool'} regardless of its context.
-Other WordNet senses for \textit{`pool'} were removed from the figure for simplicity. According to figure, 
-\begin{align}
-\textit{Senses}&(\text{pool}) = [\text{pond.n.01, pool.n.09}], \text{and} \nonumber \\
-\textit{Hypernyms}&(\text{pond.n.01}) = [\text{pond.n.01, lake.n.01}, \nonumber \\
-&\text{body\_of\_water.n.01, entity.n.01}] \nonumber
+\paragraph{Notation.} Let $\textit{Senses}(w)$ be the list of synsets defined as
+possible word senses of a given \underline{w}ord type $w$ in WordNet, and
+$\textit{Hypernyms}(s)$ be the list of hypernyms for a \underline{s}ynset
+$s$~\footnote{For notational convenience, we assume that $s \in
+\textit{Hypernyms}(s)$.}. Figure~\ref{fig:ontolstm_wordnet_grounding} shows an
+example. In the figure, solid arrows represent possible senses and dashed arrows
+represent hypernym relations. Note that the same set of concepts are used to
+ground the word \textit{`pool'} regardless of its context.  Other WordNet senses
+for \textit{`pool'} were removed from the figure for simplicity. According to
+figure, \begin{align} \textit{Senses}&(\text{pool}) = [\text{pond.n.01,
+	pool.n.09}], \text{and} \nonumber \\
+	\textit{Hypernyms}&(\text{pond.n.01}) = [\text{pond.n.01, lake.n.01},
+	\nonumber \\ &\text{body\_of\_water.n.01, entity.n.01}] \nonumber
 \end{align}
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=3in]{figures/ontolstm_wordnet_grounding.png}
-\caption{An example grounding for the word \textit{pool}}\label{fig:ontolstm_wordnet_grounding}
-\end{center}
-\end{figure}
-Each WordNet synset $s$ is associated with a set of parameters $\mathbf{v}_s \in \mathbb{R}^n$ which represent its embedding. 
-This parameterization is similar to that of~\cite{rothe:15}.
+\begin{figure} \begin{center}
+\includegraphics[width=3in]{figures/ontolstm_wordnet_grounding.png} \caption{An
+example grounding for the word
+\textit{pool}}\label{fig:ontolstm_wordnet_grounding} \end{center} \end{figure}
+Each WordNet synset $s$ is associated with a set of parameters $\mathbf{v}_s \in
+\mathbb{R}^n$ which represent its embedding.  This parameterization is similar
+to that of~\cite{rothe:15}.
 
 \paragraph{Embedding model.}
 
-\begin{figure}[t]
-\begin{center}
-\includegraphics[width=3.5in]{figures/ontolstm_token_embedding.png}
-\caption{Steps for computing the context-sensitive token embedding for the word \textit{`pool'}, as described in Section\ref{sec:ontolstm_embedding_model}.\label{fig:ontolstm_token_embedding}}
-\end{center}
-\end{figure}
+\begin{figure}[t] \begin{center}
+	\includegraphics[width=3.5in]{figures/ontolstm_token_embedding.png}
+	\caption{Steps for computing the context-sensitive token embedding for
+	the word \textit{`pool'}, as described in
+	Section\ref{sec:ontolstm_embedding_model}.\label{fig:ontolstm_token_embedding}}
+\end{center} \end{figure}
 
-Given a sequence of \underline{t}okens $\boldsymbol{t}$ and their corresponding word types $\boldsymbol{w}$, let $\mathbf{u}_i  \in \mathbb{R}^n$
-be the embedding of the word token $t_i$ at position $i$. Unlike most embedding models, the token embeddings $\mathbf{u}_i$ are not parameters.
-Rather, $\mathbf{u}_i$ is computed as the expected value of concept embeddings used to ground the word type $w_i$ corresponding to the token $t_i$:
-\begin{align}
-\mathbf{u}_i = \sum_{s \in \textit{Senses}(w_i)} 
-\sum_{s' \in \textit{Hypernyms}(s)}
-p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) \  &\mathbf{v_{s'}} 
- \label{eq:ontolstm_token_embedding}\end{align}
-such that
-\begin{equation}
-\sum_{s \in \textit{Senses}(w_i)} \sum_{s' \in \textit{Hypernyms}(s)} p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) = 1
-\nonumber \end{equation}
+Given a sequence of \underline{t}okens $\boldsymbol{t}$ and their corresponding
+word types $\boldsymbol{w}$, let $\mathbf{u}_i  \in \mathbb{R}^n$ be the
+embedding of the word token $t_i$ at position $i$. Unlike most embedding models,
+the token embeddings $\mathbf{u}_i$ are not parameters.  Rather, $\mathbf{u}_i$
+is computed as the expected value of concept embeddings used to ground the word
+type $w_i$ corresponding to the token $t_i$: \begin{align} \mathbf{u}_i =
+	\sum_{s \in \textit{Senses}(w_i)} \sum_{s' \in \textit{Hypernyms}(s)}
+p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) \  &\mathbf{v_{s'}}
+\label{eq:ontolstm_token_embedding}\end{align} such that \begin{equation}
+	\sum_{s \in \textit{Senses}(w_i)} \sum_{s' \in \textit{Hypernyms}(s)}
+	p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) = 1 \nonumber
+\end{equation}
 
-The distribution that governs the expectation over synset embeddings factorizes into two components:
-\begin{align}
-p(s, s' \mid \boldsymbol{t}, \boldsymbol{w}, i) \propto& 
-\lambda_{w_i} \exp^{-\lambda_{w_i} \  \textit{rank}(s, w_i)} \times \nonumber \\
-&  \textit{MLP}( [\mathbf{v}_{s'}; \textit{context}(i, \boldsymbol{t})]) 
-\label{eq:ontolstm_attention}
-\end{align}
-The first component, $\lambda_{w_i} \exp^{-\lambda_{w_i} \  \textit{rank}(s, w_i)}$, is a sense prior which reflects the prominence of each word sense for a given word type. Here, we exploit\footnote{Note that for ontologies where such information is not available, our method is still applicable but without this component.
-We show the effect of using a uniform sense prior in Section~\ref{sec:ontolstm_pp_analysis}.} the fact that WordNet senses are ordered in descending order of their frequencies, obtained from sense tagged corpora, and parameterize the sense prior like an exponential distribution.
-$rank(s, w_i)$ denotes the rank of sense $s$ for the word type $w_i$, thus $rank(s, w_i)=0$ corresponds to $s$ being the first sense of $w_i$.
-The scalar parameter ($\lambda_{w_i}$) controls the decay of the probability mass, which is learned along with the other parameters in the model. Note that sense priors are defined for each word type ($w_i$), and are shared across all tokens which have the same word type.
+The distribution that governs the expectation over synset embeddings factorizes
+into two components: \begin{align} p(s, s' \mid \boldsymbol{t}, \boldsymbol{w},
+	i) \propto& \lambda_{w_i} \exp^{-\lambda_{w_i} \  \textit{rank}(s, w_i)}
+	\times \nonumber \\ &  \textit{MLP}( [\mathbf{v}_{s'};
+\textit{context}(i, \boldsymbol{t})]) \label{eq:ontolstm_attention} \end{align}
+The first component, $\lambda_{w_i} \exp^{-\lambda_{w_i} \  \textit{rank}(s,
+w_i)}$, is a sense prior which reflects the prominence of each word sense for a
+given word type. Here, we exploit\footnote{Note that for ontologies where such
+information is not available, our method is still applicable but without this
+component.  We show the effect of using a uniform sense prior in
+Section~\ref{sec:ontolstm_pp_analysis}.} the fact that WordNet senses are
+ordered in descending order of their frequencies, obtained from sense tagged
+corpora, and parameterize the sense prior like an exponential distribution.
+$rank(s, w_i)$ denotes the rank of sense $s$ for the word type $w_i$, thus
+$rank(s, w_i)=0$ corresponds to $s$ being the first sense of $w_i$.  The scalar
+parameter ($\lambda_{w_i}$) controls the decay of the probability mass, which is
+learned along with the other parameters in the model. Note that sense priors are
+defined for each word type ($w_i$), and are shared across all tokens which have
+the same word type.
 
-$\textit{MLP}( [\mathbf{v}_{s'}; \textit{context}(i, \boldsymbol{t})])$, the second component, is what makes the token representations context-sensitive. 
-It scores each concept in the WordNet grounding of $w_i$ by feeding the concatenation of the concept embedding and a dense vector that summarizes the textual context into a multilayer perceptron ($\textit{MLP}$) with two $\tanh$ layers followed by a $softmax$ layer.
-This component is inspired by the soft attention often used in neural machine translation \citep{bahdanau:14}.\footnote{Although soft attention mechanism is typically used to explicitly represent the importance of each item in a sequence, it can also be applied to non-sequential items.} The definition of the $\textit{context}$ function is dependent on the encoder used to encode the context.
-We describe a specific instantiations of this function in Section~\ref{sec:ontolstm_pp_model} and Section~\ref{sec:ontolstm_snli}.
+$\textit{MLP}( [\mathbf{v}_{s'}; \textit{context}(i, \boldsymbol{t})])$, the
+second component, is what makes the token representations context-sensitive.  It
+scores each concept in the WordNet grounding of $w_i$ by feeding the
+concatenation of the concept embedding and a dense vector that summarizes the
+textual context into a multilayer perceptron ($\textit{MLP}$) with two $\tanh$
+layers followed by a $softmax$ layer.  This component is inspired by the soft
+attention often used in neural machine translation
+\citep{bahdanau:14}.\footnote{Although soft attention mechanism is typically
+used to explicitly represent the importance of each item in a sequence, it can
+also be applied to non-sequential items.} The definition of the
+$\textit{context}$ function is dependent on the encoder used to encode the
+context.  We describe a specific instantiations of this function in
+Section~\ref{sec:ontolstm_pp_model} and Section~\ref{sec:ontolstm_snli}.
 
-To summarize, Figure~\ref{fig:ontolstm_token_embedding} illustrates how to compute the embedding of a word token $t_i=\textit{`pool'}$ in a given context:
-\begin{enumerate}
-    \item compute a summary of the context $\textit{context}(i, \boldsymbol{t})$,
-    \item enumerate related concepts for $t_i$,
-    \item compute $p(s,s'\mid \boldsymbol{t}, \boldsymbol{w}, i)$ for each pair $(s,s')$, and
-    \item compute $\mathbf{u}_i = \mathbb{E}[\mathbf{v}_{s'}]$.
+To summarize, Figure~\ref{fig:ontolstm_token_embedding} illustrates how to
+compute the embedding of a word token $t_i=\textit{`pool'}$ in a given context:
+\begin{enumerate} \item compute a summary of the context $\textit{context}(i,
+			\boldsymbol{t})$, \item enumerate related concepts for
+$t_i$, \item compute $p(s,s'\mid \boldsymbol{t}, \boldsymbol{w}, i)$ for each
+pair $(s,s')$, and \item compute $\mathbf{u}_i = \mathbb{E}[\mathbf{v}_{s'}]$.
 \end{enumerate}
 
-In the following section, we describe our model for predicting PP attachments, including our definition for $\textit{context}$ for this problem.
+In the following section, we describe our model for predicting PP attachments,
+including our definition for $\textit{context}$ for this problem.
 
-\section{PP Attachment}\label{sec:ontolstm_pp_model}
-Disambiguating PP attachments is an important and challenging NLP problem. Since modeling hypernymy and selectional preferences is critical for successful prediction of PP attachments \citep{resnik:93}, it is a good fit for evaluating our WordNet-grounded context-sensitive embeddings.
+\section{PP Attachment}\label{sec:ontolstm_pp_model} Disambiguating PP
+attachments is an important and challenging NLP problem. Since modeling
+hypernymy and selectional preferences is critical for successful prediction of
+PP attachments \citep{resnik:93}, it is a good fit for evaluating our
+WordNet-grounded context-sensitive embeddings.
 
-\begin{figure}[t]
-\begin{center}
+\begin{figure}[t] \begin{center}
 \includegraphics[width=3.2in]{figures/pp_attachment_example.png}\label{fig:ontolstm_pp_example}
-\caption{Two sentences illustrating the importance
-of lexicalization in PP attachment decisions.}
-\end{center}
-\end{figure}
+\caption{Two sentences illustrating the importance of lexicalization in PP
+attachment decisions.} \end{center} \end{figure}
 
-Figure~\ref{fig:ontolstm_pp_example}, reproduced from~\cite{belinkov2014exploring}, illustrates an example of the PP attachment prediction problem.
-In the top sentence, the PP \textit{`with butter'} attaches to the noun \textit{`spaghetti'}. 
-In the bottom sentence, the PP \textit{`with chopsticks'} attaches to the verb \textit{`ate'}.
-The accuracy of a competitive English dependency parser at predicting the head word of an ambiguous prepositional phrase is 88.5\%, significantly lower than the overall unlabeled attachment accuracy of the same parser (94.2\%).\footnote{See Table~\ref{tab:ontolstm_parser_ppa_results} for detailed results.}
+Figure~\ref{fig:ontolstm_pp_example}, reproduced
+from~\cite{belinkov2014exploring}, illustrates an example of the PP attachment
+prediction problem.  In the top sentence, the PP \textit{`with butter'} attaches
+to the noun \textit{`spaghetti'}.  In the bottom sentence, the PP \textit{`with
+chopsticks'} attaches to the verb \textit{`ate'}.  The accuracy of a competitive
+English dependency parser at predicting the head word of an ambiguous
+prepositional phrase is 88.5\%, significantly lower than the overall unlabeled
+attachment accuracy of the same parser (94.2\%).\footnote{See
+Table~\ref{tab:ontolstm_parser_ppa_results} for detailed results.}
 
-This section formally defines the problem of PP attachment disambiguation, describes our baseline model, then shows how to integrate the token-level embeddings in the model.
+This section formally defines the problem of PP attachment disambiguation,
+describes our baseline model, then shows how to integrate the token-level
+embeddings in the model.
 
-\subsection{Problem Definition}\label{sec:ontolstm_pp_problem_definition}
-We follow \cite{belinkov2014exploring}'s definition of the PP attachment problem.
-Given a \underline{p}reposition $p$ and its direct \underline{d}ependent $d$ in the prepositional phrase (PP), our goal is to predict the correct head word for the PP among an ordered list of candidate \underline{h}ead words $\boldsymbol{h}$.
-Each example in the train, validation, and test sets consists of an input tuple $\langle \boldsymbol{h}, p, d \rangle$ and an output index $k$ to identify the correct head among the candidates in $\boldsymbol{h}$. Note that the order of words that form each $\langle \boldsymbol{h}, p, d\rangle$ is the same as that in the corresponding original sentence.
+\subsection{Problem Definition}\label{sec:ontolstm_pp_problem_definition} We
+follow \cite{belinkov2014exploring}'s definition of the PP attachment problem.
+Given a \underline{p}reposition $p$ and its direct \underline{d}ependent $d$ in
+the prepositional phrase (PP), our goal is to predict the correct head word for
+the PP among an ordered list of candidate \underline{h}ead words
+$\boldsymbol{h}$.  Each example in the train, validation, and test sets consists
+of an input tuple $\langle \boldsymbol{h}, p, d \rangle$ and an output index $k$
+to identify the correct head among the candidates in $\boldsymbol{h}$. Note that
+the order of words that form each $\langle \boldsymbol{h}, p, d\rangle$ is the
+same as that in the corresponding original sentence.
 
-\subsection{Model Definition}
-Both our proposed and baseline models for PP attachment use bidirectional RNN with LSTM cells (bi-LSTM) to encode the sequence $\boldsymbol{t} = \langle h_1, \ldots, h_K, p, d \rangle$.
+\subsection{Model Definition} Both our proposed and baseline models for PP
+attachment use bidirectional RNN with LSTM cells (bi-LSTM) to encode the
+sequence $\boldsymbol{t} = \langle h_1, \ldots, h_K, p, d \rangle$.
 
-We score each candidate head by feeding the concatenation of the output bi-LSTM vectors for the head $h_k$, the preposition $p$ and the direct dependent $d$ through an MLP, with a fully connected $\tanh$ layer to obtain a non-linear projection of the concatenation, followed by a fully-connected $\textit{softmax}$ layer:
+We score each candidate head by feeding the concatenation of the output bi-LSTM
+vectors for the head $h_k$, the preposition $p$ and the direct dependent $d$
+through an MLP, with a fully connected $\tanh$ layer to obtain a non-linear
+projection of the concatenation, followed by a fully-connected
+$\textit{softmax}$ layer:
 
-\begin{align}
-p(h_k \text{is head}) = \textit{MLP}_{\textit{attach}}([&\textit{lstm\_out}(h_k);\nonumber \\
-&\textit{lstm\_out}(p);\nonumber \\
-&\textit{lstm\_out}(d)]) \label{eq:pp_model}
-\end{align}
-To train the model, we use cross-entropy loss at the output layer for each candidate head in the training set.
-At test time, we predict the candidate head with the highest probability according to the model in Eq.~\ref{eq:pp_model}, i.e.,
-\begin{align}
-\hat{k} = \arg\max_k p(h_k \text{is head} = 1).
-\end{align}
-This model is inspired by the Head-Prep-Child-Ternary model of \cite{belinkov2014exploring}. 
-The main difference is that we replace the input features for each token with the output bi-RNN vectors.
+\begin{align} p(h_k \text{is head}) =
+\textit{MLP}_{\textit{attach}}([&\textit{lstm\_out}(h_k);\nonumber \\
+&\textit{lstm\_out}(p);\nonumber \\ &\textit{lstm\_out}(d)]) \label{eq:pp_model}
+\end{align} To train the model, we use cross-entropy loss at the output layer
+for each candidate head in the training set.  At test time, we predict the
+candidate head with the highest probability according to the model in
+Eq.~\ref{eq:pp_model}, i.e., \begin{align} \hat{k} = \arg\max_k p(h_k \text{is
+head} = 1).  \end{align} This model is inspired by the Head-Prep-Child-Ternary
+model of \cite{belinkov2014exploring}.  The main difference is that we replace
+the input features for each token with the output bi-RNN vectors.
 
-We now describe the difference between the proposed and the baseline models. Generally, let $\textit{lstm\_in}(t_i)$ and $\textit{lstm\_out}(t_i)$ represent the input and output vectors of the bi-LSTM for each token $t_i \in \boldsymbol{t}$ in the sequence. The outputs at each timestep are obtained by concatenating those of the forward and backward LSTMs.
+We now describe the difference between the proposed and the baseline models.
+Generally, let $\textit{lstm\_in}(t_i)$ and $\textit{lstm\_out}(t_i)$ represent
+the input and output vectors of the bi-LSTM for each token $t_i \in
+\boldsymbol{t}$ in the sequence. The outputs at each timestep are obtained by
+concatenating those of the forward and backward LSTMs.
 
 \paragraph{Baseline model.}
-In the baseline model, we use type-level word embeddings to represent the input vector $\textit{lstm\_in}(t_i)$ for a token $t_i$ in the sequence. The word embedding parameters are initialized with pre-trained vectors, then tuned along with the parameters of the bi-LSTM and $\textit{MLP}_{\textit{attach}}$. We call this model \textbf{LSTM-PP}.
+In the baseline model, we use type-level word embeddings to represent the input
+vector $\textit{lstm\_in}(t_i)$ for a token $t_i$ in the sequence. The word
+embedding parameters are initialized with pre-trained vectors, then tuned along
+with the parameters of the bi-LSTM and $\textit{MLP}_{\textit{attach}}$. We call
+this model \textbf{LSTM-PP}.
 
-\paragraph{Proposed model.}
-\label{sec:ontolstm_proposed_ppa_model}
-In the proposed model, we use token level word embedding as described in Section~\ref{sec:ontolstm_input_rep} as the input to the bi-LSTM, i.e., $\textit{lstm\_in}(t_i) = \mathbf{u}_i$. The context used for the attention component is simply the hidden state from the previous timestep. However, since we use a bi-LSTM, the model essentially has two RNNs, and accordingly we have two context vectors, and associated attentions. That is, $\textit{context}_f\textit{(i, \textbf{t})} = \textit{lstm\_in}(t_{i-1})$ for the forward RNN and $\textit{context}_b\textit{(i, \textbf{t})} = \textit{lstm\_in}(t_{i+1})$ for the backward RNN\@. Consequently, each token gets two representations, one from each RNN\@. The synset embedding parameters are initialized with pre-trained vectors and tuned along with the sense decay ($\lambda_{w}$) and MLP parameters from Eq.~\ref{eq:ontolstm_attention}, the parameters of the bi-LSTM and those of $\textit{MLP}_{\textit{attach}}$. We call this model \textbf{OntoLSTM-PP}.
+\paragraph{Proposed model.} \label{sec:ontolstm_proposed_ppa_model} In the
+proposed model, we use token level word embedding as described in
+Section~\ref{sec:ontolstm_input_rep} as the input to the bi-LSTM, i.e.,
+$\textit{lstm\_in}(t_i) = \mathbf{u}_i$. The context used for the attention
+component is simply the hidden state from the previous timestep. However, since
+we use a bi-LSTM, the model essentially has two RNNs, and accordingly we have
+two context vectors, and associated attentions. That is,
+$\textit{context}_f\textit{(i, \textbf{t})} = \textit{lstm\_in}(t_{i-1})$ for
+the forward RNN and $\textit{context}_b\textit{(i, \textbf{t})} =
+\textit{lstm\_in}(t_{i+1})$ for the backward RNN\@. Consequently, each token
+gets two representations, one from each RNN\@. The synset embedding parameters
+are initialized with pre-trained vectors and tuned along with the sense decay
+($\lambda_{w}$) and MLP parameters from Eq.~\ref{eq:ontolstm_attention}, the
+parameters of the bi-LSTM and those of $\textit{MLP}_{\textit{attach}}$. We call
+this model \textbf{OntoLSTM-PP}.
 
-\subsection{Experiments}
-\label{sec:ontolstm_pp_experiments} 
+\subsection{Experiments} \label{sec:ontolstm_pp_experiments} 
 
-\paragraph{Dataset and evaluation.} We used the English PP attachment dataset created and made available by \cite{belinkov2014exploring}. The training and test splits contain 33,359 and 1951 labeled examples respectively. As explained in Section\ref{sec:ontolstm_pp_problem_definition}, the input for each example is
+\paragraph{Dataset and evaluation.} We used the English PP attachment dataset
+created and made available by \cite{belinkov2014exploring}. The training and
+test splits contain 33,359 and 1951 labeled examples respectively. As explained
+in Section\ref{sec:ontolstm_pp_problem_definition}, the input for each example
+is \begin{enumerate} \item an ordered list of candidate head words \item the
+preposition, and \item the direct dependent of the preposition.  \end{enumerate}
+	The head words are either nouns or verbs and the dependent is always a
+	noun.  All examples in this dataset have at least two candidate head
+	words.  As discussed in \cite{belinkov2014exploring}, this dataset is a
+	more realistic PP attachment task than the RRR dataset
+	\citep{ratnaparkhi1994maximum}.  The RRR dataset is a binary
+	classification task with exactly two head word candidates in all
+	examples.  The context for each example in the RRR dataset is also
+	limited which defeats the purpose of our context-sensitive embeddings.
+
+\paragraph{Model specifications and hyperparameters.} For efficient
+implementation, we use mini-batch updates with the same number of senses and
+hypernyms for all examples, padding zeros and truncating senses and hypernyms as
+needed.  For each word type, we use a maximum of $S$ senses and $H$ indirect
+hypernyms from WordNet.  In our initial experiments on a held-out development
+set (10\% of the training data), we found that values greater than $S=3$ and
+$H=5$ did not improve performance. We also used the development set to tune the
+number of layers in $\textit{MLP}_{\textit{attach}}$ separately for the
+\textit{OntoLSTM-PP} and \textit{LSTM-PP}, and the number of layers in the
+attention MLP in \textit{OntoLSTM-PP}.  When a synset has multiple hypernym
+paths, we use the shortest one.  Finally, words types which do not appear in
+WordNet are assumed to have one unique sense per word type with no hypernyms.
+Since the POS tag for each word is included in the dataset, we exclude WordNet
+synsets which are incompatible with the POS tag.  The synset embedding
+parameters are initialized using the synset vectors obtained by running
+AutoExtend \citep{rothe:15} on 100-dimensional GloVe \citep{pennington2014glove}
+vectors for WordNet 3.1. We refer to this embedding as \textit{GloVe-extended}.
+Representation for the OOV word types in LSTM-PP and OOV synset types in
+\textit{OntoLSTM-PP} were randomly drawn from a uniform 100-d distribution.
+Initial sense prior parameters ($\lambda_w$) were also drawn from a uniform 1-d
+distribution.
+
+\paragraph{Baselines.} In our experiments, we compare our proposed model,
+\textit{OntoLSTM-PP} with four baselines:
 \begin{enumerate}
-	\item an ordered list of candidate head words
-	\item the preposition, and
-	\item the direct dependent of the preposition.
+	\item \textit{LSTM-PP} initialized with GloVe embedding
+	\item \textit{LSTM-PP} initialized with GloVe vectors retrofitted to
+		WordNet using the approach of~\cite{faruqui:15} (henceforth
+		referred to as \textit{GloVe-retro}). Note that while the
+		representations from~\cite{faruqui:15} also use WordNet
+		information like we do, their representations are
+		still static (i.e.\ not contextualized), and they do not embed
+		WordNet synsets, but instead use the neighborhood information
+		from WordNet to improve word-type embeddings.
+	\item \textit{LSTM-PP} using ELMo~\citep{Peters:2018} embeddings, with
+		the token embeddings initialized with GloVe. We use the original
+		ELMo model\footnote{\url{https://allennlp.org/elmo}}
+		with the language model trained on the 1 billion word
+		benchmark~\citep{chelba2013one}.
+	\item the best performing standalone PP attachment system
+		from~\cite{belinkov2014exploring}, referred to as \textit{HPCD (full)}
+		in the paper. \textit{HPCD (full)} is a neural network
+		model that learns to compose the vector representations of each
+		of the candidate heads with those of the preposition and the
+		dependent, and predict attachments. The input representations
+		are enriched using syntactic context information, POS, WordNet
+		and VerbNet~\citep{kipper2008large} information and the distance
+		of the head word from the PP is explicitly encoded in
+		composition architecture. In contrast, we do not use syntactic
+		context, VerbNet and distance information, and do not explicitly
+		encode POS information.
 \end{enumerate}
-The head words are either nouns or verbs and the dependent is always a noun. 
-All examples in this dataset have at least two candidate head words.
-As discussed in \cite{belinkov2014exploring}, this dataset is a more realistic PP attachment task than the RRR dataset \citep{ratnaparkhi1994maximum}.
-The RRR dataset is a binary classification task with exactly two head word candidates in all examples.
-The context for each example in the RRR dataset is also limited which defeats the purpose of our context-sensitive embeddings.
-
-\paragraph{Model specifications and hyperparameters.} 
-For efficient implementation, we use mini-batch updates with the same number of senses and hypernyms for all examples, padding zeros and truncating senses and hypernyms as needed.
-For each word type, we use a maximum of $S$ senses and $H$ indirect hypernyms from WordNet.
-In our initial experiments on a held-out development set (10\% of the training data), we found that values greater than $S=3$ and $H=5$ did not improve performance. We also used the development set to tune the number of layers in $\textit{MLP}_{\textit{attach}}$ separately for the \textit{OntoLSTM-PP} and \textit{LSTM-PP}, and the number of layers in the attention MLP in \textit{OntoLSTM-PP}.
-When a synset has multiple hypernym paths, we use the shortest one. 
-Finally, words types which do not appear in WordNet are assumed to have one unique sense per word type with no hypernyms. Since the POS tag for each word is included in the dataset, we exclude WordNet synsets which are incompatible with the POS tag.
-The synset embedding parameters are initialized using the synset vectors obtained by running AutoExtend \citep{rothe:15} on 100-dimensional GloVe \citep{pennington2014glove} vectors for WordNet 3.1. We refer to this embedding as \textit{GloVe-extended}. Representation for the OOV word types in LSTM-PP and OOV synset types in \textit{OntoLSTM-PP} were randomly drawn from a uniform 100-d distribution. 
-Initial sense prior parameters ($\lambda_w$) were also drawn from a uniform 1-d distribution.
-
-\paragraph{Baselines.} In our experiments, we compare our proposed model, \textit{OntoLSTM-PP} with three baselines -- \textit{LSTM-PP} initialized with GloVe embedding, \textit{LSTM-PP} initialized with GloVe vectors retrofitted to WordNet using the approach of \cite{faruqui:15} (henceforth referred to as \textit{GloVe-retro}), and finally the best performing standalone PP attachment system from \cite{belinkov2014exploring}, referred to as \textit{HPCD (full)} in the paper. \textit{HPCD (full)} is a neural network model that learns to compose the vector representations of each of the candidate heads with those of the preposition and the dependent, and predict attachments. The input representations are enriched using syntactic context information, POS, WordNet and VerbNet \citep{kipper2008large} information and the distance of the head word from the PP is explicitly encoded in composition architecture. In contrast, we do not use syntactic context, VerbNet and distance information, and do not explicitly encode POS information.
-
 \subsubsection{PP Attachment Results}
 \begin{table}
-    \centering
-    \begin{tabular}{lcccc}
-    \toprule
-    \textbf{System} & \textbf{Initialization} & \textbf{Embedding} & \textbf{Resources} & \textbf{Test Acc.}\\
-    \midrule
-    HPCD (full) & Syntactic-SG & Type & WordNet, VerbNet & 88.7 \\
-    \midrule
-    LSTM-PP  & GloVe & Type & - & 84.3 \\
-    LSTM-PP & GloVe-retro & Type & WordNet & 84.8 \\
-    OntoLSTM-PP & GloVe-extended & Token & WordNet & \textbf{89.7} \\
-    \bottomrule
-    \end{tabular}
-    \caption{Prepositional Phrase Attachment Results with OntoLSTM}
-    \label{tab:ontolstm_direct_ppa_results}
+	\centering
+	\begin{tabular}{lcccc}
+		\toprule
+		\multirow{2}{*}{\textbf{System}} &
+		\multirow{2}{*}{\textbf{Initialization}} &
+		\multirow{2}{*}{\textbf{Resources}} & \textbf{Parameters} & 
+		\multirow{2}{*}{\textbf{Test Acc.}}\\
+		& & & \textbf{(millions)} & \\
+		\midrule
+		HPCD (full) & Syntactic-SG & WordNet, VerbNet & - & 88.7 \\
+		\midrule
+		LSTM-PP & GloVe & - & 1.3 & 84.3 \\
+		LSTM-PP & GloVe-retro & WordNet & 1.3 & 84.8 \\
+		LSTM-PP w/ ELMo & GloVe + ELMo & LM trained on 1B words &
+		95 & 89.0 \\
+		OntoLSTM-PP & GloVe-extended & WordNet & 2 & \textbf{89.7} \\
+		\bottomrule
+	\end{tabular}
+	\caption{Prepositional Phrase Attachment results with OntoLSTM in
+	comparison with other strong baselines}\label{tab:ontolstm_direct_ppa_results}
 \end{table}
-%We compare OntoLSTM-PP to two instantiations of LSTM-PP as well as the best performing .  In all systems, the word type embedding or synset embedding is tuned during training. 
-Table~\ref{tab:ontolstm_direct_ppa_results} shows that our proposed token level embedding scheme \textit{OntoLSTM-PP} outperforms the better variant of our baseline \textit{LSTM-PP} (with GloVe-retro intialization) by an absolute accuracy difference of 4.9\%, 
-or a relative error reduction of 32\%.
-\textit{OntoLSTM-PP} also outperforms \textit{HPCD (full)}, the previous best result on this dataset. \textit{HPCD (full)} is from the original paper, and it uses syntactic SkipGram. \textit{GloVe-retro} is GloVe vectors retrofitted \citep{faruqui:15} to WordNet 3.1, and \textit{GloVe-extended} refers to the synset embeddings obtained by running AutoExtend \citep{rothe:15} on GloVe.
 
-Initializing the word embeddings with \textit{GloVe-retro} (which uses WordNet as described in \cite{faruqui:15}) instead of GloVe amounts to a small improvement, compared to the improvements obtained using \textit{OntoLSTM-PP}.
-This result illustrates that our approach of dynamically choosing a context sensitive distribution over synsets is a more effective way of making use of WordNet.
+Table~\ref{tab:ontolstm_direct_ppa_results} shows that our proposed token level
+embedding scheme \textit{OntoLSTM-PP} outperforms the better variant of our
+baseline \textit{LSTM-PP} (with GloVe-retro intialization) by an absolute
+accuracy difference of 4.9\%, or a relative error reduction of 32\%.
+\textit{OntoLSTM-PP} also outperforms \textit{HPCD (full)}, the previous best
+result on this dataset. \textit{HPCD (full)} is from the original paper, and it
+uses syntactic SkipGram. \textit{GloVe-retro} is GloVe vectors retrofitted
+\citep{faruqui:15} to WordNet 3.1, and \textit{GloVe-extended} refers to the
+synset embeddings obtained by running AutoExtend \citep{rothe:15} on GloVe.
 
+Initializing the word embeddings with \textit{GloVe-retro} (which uses WordNet
+as described in \cite{faruqui:15}) instead of GloVe amounts to a small
+improvement, compared to the improvements obtained using \textit{OntoLSTM-PP}.
+This result illustrates that our approach of dynamically choosing a context
+sensitive distribution over synsets is a more effective way of making use of
+WordNet.
 
-\paragraph{Effect on dependency parsing.} Following \cite{belinkov2014exploring}, we used RBG parser \citep{lei2014low}, and modified it by adding a binary feature indicating the PP attachment predictions from our model. 
+Using ELMo embeddings in the \textit{LSTM-PP} model closes the gap between the
+LSTM models and \textit{OntoLSTM-PP} to a large extent, but not completely.
+It has to be noted that the model with ELMo has more than $40$ times more
+parameters than the OntoLSTM model.
+
+\paragraph{Effect on dependency parsing.} Following
+\cite{belinkov2014exploring}, we used RBG parser \citep{lei2014low}, and
+modified it by adding a binary feature indicating the PP attachment predictions
+from our model. 
 
 We compare four ways to compute the additional binary features:
-\begin{enumerate}
-	\item the predictions of the best standalone system \textit{HPCD (full)} in \cite{belinkov2014exploring}
-	\item the predictions of our baseline model \textit{LSTM-PP}
-	\item the predictions of our improved model \textit{OntoLSTM-PP}
-	\item the gold labels \textit{Oracle PP}.
-\end{enumerate}
+\begin{enumerate} \item the predictions of the best standalone system
+		\textit{HPCD (full)} in \cite{belinkov2014exploring} \item the
+			predictions of our baseline model \textit{LSTM-PP} \item
+the predictions of our improved model \textit{OntoLSTM-PP} \item the gold labels
+\textit{Oracle PP}.  \end{enumerate}
 
-Table~\ref{tab:ontolstm_parser_ppa_results} shows the effect of using the PP attachment predictions as features within a dependency parser. 
-We note there is a relatively small difference in unlabeled attachment accuracy for all dependencies (not only PP attachments), even when gold PP attachments are used as additional features to the parser.
-However, when gold PP attachment are used, we note a large potential improvement of 10.46 points in PP attachment accuracies (between the PPA accuracy for \textit{RBG} and \textit{RBG + Oracle PP}), which confirms that adding PP predictions as features is an effective approach. 
-Our proposed model \textit{RBG + OntoLSTM-PP} recovers 15\% of this potential improvement, while \textit{RBG + HPCD (full)} recovers 10\%, which illustrates that PP attachment remains a difficult problem with plenty of room for improvements even when using a dedicated model to predict PP attachments and using its predictions in a dependency parser.
+Table~\ref{tab:ontolstm_parser_ppa_results} shows the effect of using the PP
+attachment predictions as features within a dependency parser.  We note there is
+a relatively small difference in unlabeled attachment accuracy for all
+dependencies (not only PP attachments), even when gold PP attachments are used
+as additional features to the parser.  However, when gold PP attachment are
+used, we note a large potential improvement of 10.46 points in PP attachment
+accuracies (between the PPA accuracy for \textit{RBG} and \textit{RBG + Oracle
+PP}), which confirms that adding PP predictions as features is an effective
+approach.  Our proposed model \textit{RBG + OntoLSTM-PP} recovers 15\% of this
+potential improvement, while \textit{RBG + HPCD (full)} recovers 10\%, which
+illustrates that PP attachment remains a difficult problem with plenty of room
+for improvements even when using a dedicated model to predict PP attachments and
+using its predictions in a dependency parser.
 
-We also note that, although we use the same predictions of the \textit{HPCD (full)} model in  \cite{belinkov2014exploring}\footnote{The authors kindly provided their predictions for 1942 test examples (out of 1951 examples in the full test set). In Table~\ref{tab:ontolstm_parser_ppa_results}, we use the same subset of 1942 test examples.}, we report different results than  \cite{belinkov2014exploring}.
-For example, the unlabeled attachment score (UAS) of the baselines \textit{RBG} and \textit{RBG + HPCD (full)} are 94.17 and 94.19, respectively, in Table~\ref{tab:ontolstm_parser_ppa_results}, compared to 93.96 and 94.05, respectively, in \cite{belinkov2014exploring}.
-This is due to the use of different versions of the RBG parser.\footnote{We use the latest commit (SHA: e07f74) on the GitHub repository of the RGB parser.}
+We also note that, although we use the same predictions of the \textit{HPCD
+(full)} model in  \cite{belinkov2014exploring}\footnote{The authors kindly
+provided their predictions for 1942 test examples (out of 1951 examples in the
+full test set). In Table~\ref{tab:ontolstm_parser_ppa_results}, we use the same
+subset of 1942 test examples.}, we report different results than
+\cite{belinkov2014exploring}.  For example, the unlabeled attachment score (UAS)
+of the baselines \textit{RBG} and \textit{RBG + HPCD (full)} are 94.17 and
+94.19, respectively, in Table~\ref{tab:ontolstm_parser_ppa_results}, compared to
+93.96 and 94.05, respectively, in \cite{belinkov2014exploring}.  This is due to
+the use of different versions of the RBG parser.\footnote{We use the latest
+commit (SHA: e07f74) on the GitHub repository of the RGB parser.}
 
 \begin{table}
     \centering
@@ -508,14 +654,16 @@ information in this problem.
 the model size in \textit{LSTM-TE} and both variants of \textit{OntoLSTM-TE} are comparable
 (11.1M and 12.7M parameters, respectively).
 
-\section{Comparison with ELMo} \label{sec:ontolstm_vs_elmo}
-
 \section{Conclusion}
-In this chapter, we showed a grounding of lexical items which acknowledges the semantic ambiguity 
-of word types using WordNet and a method to learn a context-sensitive distribution over their representations.
+In this chapter, we showed a procedure for grounding of lexical items which acknowledges the semantic ambiguity 
+of word types using WordNet and a way to learn a context-sensitive distribution over their representations.
 We also showed how to integrate the proposed representation with recurrent neural networks for modeling sentences,
 showing that the proposed WordNet-grounded context-sensitive token embeddings outperforms standard type-level embeddings
-for predicting PP attachments and textual entailment.
+for predicting PP attachments and textual entailment. For PP attachments, we
+also showed that our model outperforms a baseline model with ELMo embeddings.
+This result suggests that symbolic ontologies like WordNet may be able to
+provide knowledge that cannot be substituted by language models trained on large
+amounts of unlabeled texts.
 
 We encoded a specific kind of background knowledge using WordNet in this work, but the methods described here can be extended 
 to other kinds of structured knowledge sources as well. For example, one can effectively encode entities in text, using structured information

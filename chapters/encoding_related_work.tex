@@ -73,13 +73,14 @@ instead of representing words statically using some internal state of a language
 as dynamic functions of internal states from all the layer of a deep language model, with the parameters of the
 functions being learned jointly from the task objective.
 The use of a language model makes the word representations contextualized
-(TODO: also talk about CoVe and MattP's ACL17 paper) since each word gets a different representation given its
+%(TODO: also talk about CoVe and MattP's ACL17 paper)
+since each word gets a different representation given its
 context. The fact that the parameters of the function are learned based on the end-task objective essentially
 finetunes the representations for the task. We will describe a model with similar motivations in
 Chapter~\ref{chapter:ontolstm}, but instead of exploiting the syntactic and semantic patterns learned from a large
 corpus, by a deep language model like ELMo, the model we present exploits explicit ontological information obtained
-from WordNet \citep{miller1995wordnet}. See Section~\ref{sec:ontolstm_vs_elmo} for an empirical comparison of our
-model with ELMo, and an analysis of the kinds of information learned by the two models. 
+from WordNet~\citep{miller1995wordnet}. See Section~\ref{sec:ontolstm_pp_results} for an empirical comparison of our
+model with ELMo.
 
 Following the success of ELMo, the idea of pre-training a language model, and discriminatively fine-tuning the
 learned representations to other tasks was also used by~\cite{radford2018improving}, while replacing the LSTMs used

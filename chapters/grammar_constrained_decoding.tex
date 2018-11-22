@@ -124,7 +124,8 @@ parsers achieves 45.9\%.  We further perform
 several ablation studies that demonstrate the importance of both grammar
 constraints and entity linking to achieving high accuracy on this task.
 
-\section{Grammar-Constrained Neural Semantic Parser}
+\section{Grammar-Constrained Neural Semantic
+Parser}\label{sec:grammar_constrained_model}
 \begin{figure}
 \centering
 \includegraphics[width=6in]{figures/type_constrained_nnsp.png}
@@ -246,8 +247,7 @@ This process produces an encoded vector representation of each token $o_i$. The
 final LSTM hidden states $f_n$ and $b_{-1}$ are concatenated  and used to 
 initialize the decoder.
 
-\subsection{Decoder}
-\label{sec:nnsp_decoder}
+\subsection{Decoder}\label{sec:nnsp_decoder}
 
 The decoder is an LSTM with attention that selects parsing actions from a 
 grammar over well-typed logical forms.

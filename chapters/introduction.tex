@@ -78,7 +78,9 @@ specific), and $\mathbf{o}$ are the final task specific predictions. For example
 Analysis or RTE, $\mathbf{o}$ are categorical labels indicating the sentiment or entailment
 respectively.
 
-\paragraph{Encoding} In older feature-rich methods for NLU, Equation~\ref{eq:generic_encoding} used
+\paragraph{Encoding} We define encoding in NLU as the process of extracting information (often called
+features) from the input texts that is required for task-specific reasoning.
+In older feature-rich methods for NLU, Equation~\ref{eq:generic_encoding} used
 to be a mapping of the inputs to a hand designed feature space, typically containing patterns over
 word classes based on part-of-speech \citep{corley2005measuring} or Wordnet synsets
 \citep{moldovan2001logic}; shallow linguistic features like dependencies \citep{bos2005recognising};
@@ -91,9 +93,17 @@ use representation learning or deep learning techniques to also learn the parame
 $\mathtt{encode}$ function, and typically this is done jointly with learning the parameters of the
 $\mathtt{reason}$ function, to ensure that learned representations are relevant to the task.
 
-\paragraph{Reasoning} This step in an NLU system is the one that produces the final prediction. The
-complexity of this step depends on the task at hand.  For example, in tasks like Sentiment Analysis
-or RTE, where the output is one of muliple classes, assuming that the encoder does a good job at
+\paragraph{Reasoning} This step in an NLU system is the one that produces the final prediction. It is called
+\textit{reasoning} because it is expected to emulate human reasoning.  The term \textit{reasoning} is used in
+AI, quite broadly to mean different things. However, according to most of those definitions, reasoning
+involves processing available information to identify patterns or insights that are not trivially obvious.
+Depending on the nature of inputs, this may or may not map to reasoning in formal logic. Especially in the
+context of NLU, where the inputs are natural language texts, unless there is an explicit step in the NLU
+system for translating them into some formal language, strictly logical reasoning is infeasible.
+
+
+The complexity of this step depends on the task at hand.  For example, in tasks like Sentiment Analysis
+or RTE, where the output is one of multiple classes, assuming that the encoder does a good job at
 extracting the relevant features from input, reasoning involves building a classifier for the output
 classes that operates on the features extracted \citep{pang2002thumbs}. However, in the case of
 semantic parsing for question answering over a knowledge graph, reasoning requires determining how

@@ -22,4 +22,12 @@ We do not assume the availability of logical forms, and build weakly supervised 
 large space of logical forms. To deal with these challenges, we propose 1) using a grammar to constrain the output space of the semantic parser; 2) leveraging a lexical coverage measure to ensure the
 relevance of produced logical forms to input utterances; and 3) a novel iterative training scheme that alternates between searching for logical forms, and maximizing the likelihood of the retrieved ones, thus effectively transferring
 the knowledge from simpler logical forms to more complex ones. We build neural encoder-decoder models for semantic parsing that use these techniques, and show state-of-the-art results on two complex QA tasks grounded in
-structured contexts. Furthermore, we discuss how these techniques can be extended to reading comprehension over unstructured contexts, and show a pilot empirical study to motivate future work.
+structured contexts
+
+Overall, this thesis presents a general framework for NLU with encoding and
+reasoning as the two core components, and how additional knowledge can augment
+them. While the tasks presented in this thesis are hard language understanding
+challenges themselves, they also serve as examples to highlight the role of background
+and contextual knowledge in encoding and reasoning components. The models built
+for the tasks provide empirical evidence for the need for additional knowledge, and
+pointers for building effective knowledge-aware models for other NLU tasks.

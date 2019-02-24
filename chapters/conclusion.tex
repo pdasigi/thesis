@@ -97,83 +97,8 @@ That may very well be because all these reasoning systems are built for datasets
 like~\cite[among others]{Richardson2013MCTestAC,Rajpurkar2016SQuAD10,Joshi2017TriviaQAAL}
 which require selecting spans in passages given as context.
 
-One potential direction going forward is to define tasks
-that require discrete reasoning over unstructured contexts, and build models for
-them. To provide further motivation for this line of research, we will present
-the result of a pilot annotation towards building such a dataset, and show some
-empirical analysis from an initial model trained on that task.
-
-\subsection{A challenging reasoning task}
-As we have pointed out in Chapter~\ref{chapter:reasoning_related_work},
-reasoning driven by discrete operations opens up a class of tasks that can be
-modeled (e.g.:\ those that involve counting or sorting entities, performing set
-operations, etc.). Reasoning for tasks such as these has been done by semantic
-parsers in the past. However, semantic parsing typically operates on structured
-data, where the entities and relations are explicitly identified, ideally as a
-knowledge graph. Here, we introduce a new dataset where the contexts
-are unstructured, and reasoning involves discrete operations. We present the
-results of a pilot annotation study here, and comment on how this new dataset
-calls for novel modeling choices.
-
-\paragraph{Annotation task} The task was posted on Amazon Mechanical Turk, and the turkers were
-asked to provide questions for paragraphs taken from Wikipedia where the answers
-fall under one of three categories:
-\begin{enumerate}
-	\item A number that is not necessarily in the paragraph
-	\item A date that is not necessarily in the paragraph
-	\item A span either in the paragraph or the question 
-\end{enumerate}
-The annotators were asked to use counting, addition or subtraction, \textit{max}
-or \textit{min} operations for answers that are numbers or dates. The annotation
-task was designed such that any questions written by the annotators that can be
-answered by the BiDAF~\citep{Seo2016BidirectionalAF}, a well performing
-span selection model would be rejected. This procedure resulted in a dataset
-that contains $17185$ questions in the training set, and $6861$ questions in the
-development set, over $3124$ and $1100$ paragraphs respectively. We use this
-dataset for our initial experiments below.
-
-\begin{figure}
-	\includegraphics[width=\textwidth]{figures/drop_example.png}
-	\caption{A hard reasoning task requiring discrete operations on
-unstructured contexts}\label{fig:drop_example}
-\end{figure}
-
-Figure~\ref{fig:drop_example} shows an example paragraph along with two
-associated questions that resulted from the pilot annotation task. As it can be
-seen from the examples, it can seen that the questions at least require identifying entity types (e.g.
-\textit{Miguel de Noronha} and \textit{Garcia Alvarez de Toledo} are of type
-\textit{people}), solving co-reference over long distances (\textit{3000 men}
-refers to a subset of \textit{5000 soldiers}), solving entailment (e.g.
-\textit{death} contradicts \textit{survived}). Assuming all this information is
-successfully extracted, the questions then require discrete operations (counting
-for the first, and difference for the second).
-
-\subsection{Towards building a semantic parser}
-To assess the limitations of the techniques presented in this thesis, we applied
-the parser we presented in Chapter~\ref{chapter:nlvr} to this task. A
-prerequisite for doing so is to first extract relevant information from the
-context to make a structure over which the parser can reason.
-
-\paragraph{Information Extraction}
-We run a trained open information extraction
-(OpenIE) model~\citep{stanovsky2018supervised} over all the sentences in the
-paragraph to extract predicate argument structures. This forms the base of our
-knowledge graph, which is then augmented as follows: For each argument in each
-predicate argument structure, we define additional relations from the text span
-to all the numbers and entities (identified by a Named Entity Recognizer) in it.
-Given this representation, we directly train a semantic parser using the
-procedure described in Chapter~\ref{chapter:nlvr}: We run an exhaustive search
-procedure to obtain logical forms for as many questions as possible, and train
-an MML parser on it.
-
-\paragraph{Results}
-The exhaustive search procedure results in logical forms for only $50\%$ of the
-training set, and on a manual inspection of a sample from them, we estimated
-that only for $13\%$ of the questions, the search procedure could result in
-logical form sets where at least one of the forms was correct. Finally, when the
-MML model trained on this dataset had a $7.5\%$ accuracy on the development set.
-
-\paragraph{Challenges}
+In contrast, the recently introduced DROP dataset~\citep{drop}
+requires discrete reasoning over paragraphs. 
 The biggest hurdle in taking the route of semantic
 parsing for this task is the lack of high-quality information extraction. Given that it is
 already challenging to extract the kinds of information required by the

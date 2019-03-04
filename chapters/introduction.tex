@@ -1,19 +1,23 @@
-\section{Natural Language Understanding} \subsection{Definition} Natural Language Understanding
-(NLU) is the study of building machines that understand human languages. It has been a long-standing
+\section{Natural Language Understanding}
+\subsection{Definition}
+Natural Language Understanding (NLU) is the study of building machines that understand human languages.
+It has been a long-standing
 problem in the field of Artificial Intelligence. An NLU system should process human generated text
 (or speech) at a deep semantic level, represent the semantics of the processed inputs, and reason
 over them to perform a given task. NLU is thus an umbrella term that can be defined in terms of the
 tasks that fall under it, and these are tasks that require computational systems to perform some
 amount of nontrivial language comprehension.
 
-NLU is a subfield of Natural Language Processing (NLP), and the distinction between NLP tasks that
-fall under NLU and those that do not, can be made in terms of the depth of the semantics that needs
+NLU is a subfield of Natural Language Processing (NLP) and the distinction between NLP tasks that
+fall under NLU and those that do not can be made in terms of the depth of the semantics that needs
 to be modeled for performing those tasks.  For example, a well-performing part-of-speech (POS)
 tagger for English can be built mostly using surface level lexical features
 \citep{toutanova2003feature}, and POS tagging can thus be considered a non-NLU task. In contrast,
 identifying whether two given sentences are paraphrases might require modeling syntactic similarity
 and lexical relations between the words in the sentences \citep{das2009paraphrase}, thus making
-paraphrase identification an NLU task. However, one cannot define a strict subset of NLP tasks that
+paraphrase identification an NLU task. Drawing such a distinction is important for characterizing the class of tasks
+that fall within the scope of NLU, and subsequently this thesis. However, that is not an easy exercise since
+one cannot define a strict subset of NLP tasks that
 can be identified as NLU\@. That is because there are several tasks that fall somewhere between
 simpler tasks like POS tagging and more complex ones like paraphrase identification in terms of the
 complexity of semantics.  Moreover, several tasks require varying levels semantic complexity to
@@ -39,18 +43,14 @@ Entity Recognition (NER). In contrast, recent NLU systems have moved away from p
 architectures, and often involve end-to-end learning of intermediate features.  While this makes the
 boundaries of NLU fuzzier, the core intuitions still remain, and the distinction can still be made
 in terms of complexity of models, with modeling non-NLU tasks generally requiring simpler models
-\citep{wang2015part} than NLU task \citep{chen2017enhanced}, given sufficiently large datasets.
+\citep{wang2015part} than NLU tasks \citep{chen2017enhanced}, given sufficiently large datasets.
 
 In this thesis, we rely heavily on representation learning and deep learning techniques. Our focus
 is to study how we can improve the quality of the semantics extracted from the inputs, and make
 reasoning more effective.  Accordingly, we will choose a subset of tasks that are closer to the NLU
 end of the spectrum described above, and build computational systems for them.
 
-%\begin{figure} \begin{center} \includegraphics[width=5in]{figures/NLU_spectrum.png} \caption{Various
-%NLP tasks organized in terms of the complexity of semantics needed to solve
-%them.}\label{fig:nlu_spectrum} \end{center} \end{figure}
-
-\subsection{Parts of an NLU system} Now that we have characterized the tasks we are interested in,
+Now that we have informally characterized the tasks we are interested in,
 let us identify what goes into building systems for those tasks.  Consider Question Answering (QA),
 which refers to answering questions about a span of text, or other structured knowledge
 representations like knowledge bases or even images.  QA systems are required to encode the meaning
@@ -63,8 +63,14 @@ Similarly, Sentiment Analysis requires automatically categorizing the opinions e
 input utterances towards specific targets. This involves extracting appropriate affective states and
 subjective information, such that a sentiment classifier can be built using that information as
 features. To perform well at at each of these tasks, the NLU systems should encode the semantics of
-the input to support the kind of reasoning appropriate for the task.
+the input to support the kind of reasoning appropriate for the task. This observation leads us to identifying the
+parts of a generic NLU system as follows.
 
+%\begin{figure} \begin{center} \includegraphics[width=5in]{figures/NLU_spectrum.png} \caption{Various
+%NLP tasks organized in terms of the complexity of semantics needed to solve
+%them.}\label{fig:nlu_spectrum} \end{center} \end{figure}
+
+\subsection{Parts of an NLU system}
 In each of the examples above, it can be noticed that there are two common steps: \textbf{encoding}
 and \textbf{reasoning}. The encoder extracts task-relevant features from the input, and the
 reasoning module performs the appropriate computation on top of the features given by the encoder to
@@ -94,17 +100,19 @@ $\mathtt{encode}$ function, and typically this is done jointly with learning the
 $\mathtt{reason}$ function, to ensure that learned representations are relevant to the task.
 
 \paragraph{Reasoning} This step in an NLU system is the one that produces the final prediction. It is called
-\textit{reasoning} because it is expected to emulate human reasoning.  The term \textit{reasoning} is used in
-AI, quite broadly to mean different things. However, according to most of those definitions, reasoning
-involves processing available information to identify patterns or insights that are not trivially obvious.
-Depending on the nature of inputs, this may or may not map to reasoning in formal logic. Especially in the
-context of NLU, where the inputs are natural language texts, unless there is an explicit step in the NLU
-system for translating them into some formal language, strictly logical reasoning is infeasible.
-
-
-The complexity of this step depends on the task at hand.  For example, in tasks like Sentiment Analysis
+\textit{reasoning} because it is expected to emulate human reasoning, particularly the non-trivial aspects of
+it.  The term is used in AI quite broadly to mean different things. However, according to most of those
+definitions, reasoning involves processing available information (in its encoded form) to identify
+patterns or insights that are not trivially obvious. In traditional (or symbolic) AI systems, reasoning
+typically involved logical inference. That is, given some knowledge expressed as rules, principles of formal
+logic would be used to infer more rules from them, which may be regarded as the newer insights drawn. In more
+modern AI systems, reasoning is both non-symbolic and probabilistic. It is non-symbolic because reasoning
+operates on elements in a continuous space (i.e., the encoded inputs) instead of symbols in a discrete space,
+and it is probabilistic because the inferred insights do not simply evaluate to ``true'' or ``false'', but
+have degrees of truth, or probabilities associated with them. The complexity of reasoning depends on the task at hand.
+For example, in tasks like Sentiment Analysis
 or RTE, where the output is one of multiple classes, assuming that the encoder does a good job at
-extracting the relevant features from input, reasoning involves building a classifier for the output
+extracting the relevant features from input, reasoning involves applying a classifier for the output
 classes that operates on the features extracted \citep{pang2002thumbs}. However, in the case of
 semantic parsing for question answering over a knowledge graph, reasoning requires determining how
 parts of the question can be linked to nodes and edges in the knowledge graph, and how they can be
@@ -112,7 +120,7 @@ composed to obtain a complete translation of the question into a semantic space 
 graph, so that the translation, or a logical form, can be executed against the graph to produce the
 answer \citep{Zettlemoyer2005LearningTM}.
 
-\section{Knowledge}\label{sec:intro_external_knowledge} We attempted to describe a generic NLU
+We attempted to describe a generic NLU
 system in Equations~\ref{eq:generic_encoding} and~\ref{eq:generic_reasoning}, with the assumption
 that the information provide by the utterances $\textbf{I}$ alone is sufficient for encoding their
 meaning and reasoning over them. However, this is seldom the case, and the generic formulation we
@@ -123,9 +131,12 @@ each other without explicitly making references to this shared knowledge. This m
 building NLU systems challenging, since they need to process human utterances more or less in
 isolation. The utterances themselves seldom contain all the information needed to comprehend them.
 The missing information is either part of the background knowledge about the world humans inherently
-possess, or is provided by the surrounding context in which the utterance is spoken or written. NLU
-systems thus need to access or infer this knowledge to fully comprehend human language.
+possess, or is provided by the surrounding context in which the utterance is spoken or written.
+How can NLU systems avail this additional knowledge?
 
+\section{Knowledge}\label{sec:intro_external_knowledge} 
+NLU systems need to access or infer the relevant background knowledge and contextual knowledge
+to fully comprehend human language.
 In principle, a sophisticated model should be able to infer this knowledge given enough annotated
 data. Thus, one might argue that NLU system builders should focus on obtaining more data to train
 fully supervised systems. Our counter-argument to that is based on the practicality of building NLU
@@ -133,7 +144,7 @@ systems, and is twofold: Firstly, it is often difficult to get sufficient high q
 for most NLU tasks in practice. Any additional knowledge that can augment the information provided
 by the data could help build a better model for the task at hand. Secondly, if knowledge about some
 aspects of semantics that need to be modeled can be easily obtained, it is inefficient to not use
-it, and build a model from scratch hoping that it would learn that knowledge. The modeling capacity
+it, and build a model from scratch hoping that it would learn that knowledge from data. The modeling capacity
 could instead be used for capturing more nuanced aspects of semantics that the data provide. We will
 revisit these counter-arguments later in the thesis as we describe concrete tasks.
 
@@ -155,8 +166,7 @@ detail.
 
 \subsection{Background Knowledge for Encoding} Background knowledge refers to the domain-specific
 information needed by NLU systems to fill in the gaps in human utterances to effectively encode
-them. In general domains, this knowledge constitutes real world facts and commonsense knowledge, and
-in specialized domains, it might include more esoteric information.
+them.
 
 Consider encoding the semantics of the following two sentences:
 \begin{itemize}
@@ -172,12 +182,20 @@ prepositional-phrase (PP) attachment. Ideally, it should predict that
 \textit{with butter} attaches to \textit{spaghetti} in the first sentence, and
 \textit{with chopsticks} attaches to \textit{ate}.
 
-A system that does not explicitly have access to this information will at best memorize
-co-occurrence patterns in the input words.  Using pre-trained vectors to represent input words
-provides additional knowledge to the model in the form of co-occurrence statistics obtained from
+In general domains, the missing knowledge constitutes real world facts and commonsense information, and
+in specialized domains, it might include more esoteric information. For example, an NLU system processing
+biomedical texts might need information from gene and protein ontologies~\citep{Bodenreider2004TheUM}, and one
+that is trained to pass an elementary science exam might need access to relevant scientific
+facts~\citep{Clark2013ASO}.
+
+In any case, a system that does not explicitly have access to this knowledge will at best memorize
+co-occurrence patterns in the input words.  Using pre-trained representations to represent input words,
+as it has been done in several NLU systems recently,
+avoids the memorization issue to some extent, since the representations provide additional knowledge to the model
+in the form of co-occurrence statistics obtained from
 large corpora. However, it is unclear whether distributional information at the word level alone can
-generally substitute for the kind of knowledge described above. Fortunately, for knowledge like
-this, one can leverage the information a lexical ontology like WordNet \citep{miller1995wordnet}
+generally substitute for the kind of knowledge described above. Fortunately, for such knowledge,
+one can leverage the information a lexical ontology like WordNet \citep{miller1995wordnet}
 gives. For example, WordNet specifies that \textit{butter} is a \textit{diary product}, and
 \textit{chopsticks} are \textit{tableware}.
 
@@ -191,7 +209,7 @@ recovering after being bitten by a dog.} \item[] \textit{Man recovering after be
 
 Clearly, one would find the third sentence more unusual compared to the first and the second, the
 reason being that a \emph{dog} performing a \emph{shooting} action does not agree with our knowledge
-about the general state of affairs. While this information is not clearly written down anywhere,
+about the general nature of the world. While this information is not clearly written down anywhere,
 humans know it implicitly. An NLU system that is designed to differentiate between these sentences
 should be provided with the information that \emph{dog} in the role of the agent for \emph{shooting}
 is unlikely, while it can be the patient for \emph{shooting}, and \emph{man} fits equally well as
@@ -217,7 +235,7 @@ affects how reasoning can be performed in context.
 Depending on the type of contexts over which the given task requires reasoning, different forms of
 contextual knowledge may be needed.  In this thesis, we focus on the case where explicit relations
 exist among bits of information in the contexts so that they can be represented as knowledge graphs,
-and reasoning over them can be performed as a series of discrete operations, thus making it an instance of
+and reasoning over them can be performed as a series of discrete operations, making it an instance of
 \emph{Semantic Parsing}. Contextual knowledge in our case is required to link parts of the inputs to nodes or
 edges in the graph, and to set syntactic and semantic constraints on the logical forms produced by
 the semantic parser.
@@ -274,7 +292,7 @@ augment the NLU systems in different ways.
 
 \subsection{Better encoding with background knowledge} $\mathbf{K}_e$ is additional knowledge used
 to fill in the semantic gaps in the inputs, and thus obtain better encoded representations of them.
-One source of such background knowledge is knowledge bases and ontologies, which encode it
+One common source of such background knowledge in AI is knowledge bases and ontologies, which encode it
 explicitly. Examples include hypernym trees from WordNet for incorporating sense and generalization
 information about concepts while composing sentences and subgraph features from Freebase to encode
 relations between entities seen in the input text.~\cite{moldovan2001logic}
@@ -311,7 +329,7 @@ others.  In Chapter~\ref{chapter:nem}, we take this idea further to model select
 within predicate argument structures, to learn representations of of the implicit knowledge required
 to distinguish anomalous newswire events from normal ones.
 
-\subsection{Reasoning with contextual knowledge} $\textbf{K}_r$ inputs allow NLU systems reason
+\subsection{Reasoning with contextual knowledge} $\textbf{K}_r$ inputs allow NLU systems to reason
 using additional contextual knowledge. Within this thesis, we focus on those tasks where reasoning
 can be viewed as semantic parsing problems.  The contexts are often structured in this case. There
 exist both traditional \citep[among
@@ -320,8 +338,8 @@ based methods
 \citep{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN} for
 solving these problems. 
 
-Depending on the level of supervision provided, training semantic parsers might require additional
-contextual knowledge. If logical form supervision is not available
+Depending on the kind of supervision provided, training semantic parsers might require additional
+contextual knowledge. If supervision does not include the intermediate logical forms
 \citep{berant2013semantic,pasupat2015compositional,krishnamurthy2017neural}, semantic parsing
 involves some form of a search over the logical form space to find those that correspond to the
 sequence of operations that result in the correct answer.  In that case, contextual knowledge about

@@ -22,11 +22,6 @@ can be identified as NLU\@. That is because there are several tasks that fall so
 simpler tasks like POS tagging and more complex ones like paraphrase identification in terms of the
 complexity of semantics.  Moreover, several tasks require varying levels semantic complexity to
 solve the sub-tasks involved.
-%Figure~\ref{fig:nlu_spectrum} is an attempt at showing the spectrum of semantic depth
-%demanded by popular NLP tasks. While some can be solved using simple pattern matching, those towards
-% the right need extracting deeper semantics from the inputs provided, and reasoning over them
-% (citation required). The size of the bars correspond to the range of feature complexity required by
-% the tasks.
 For example, some sub-tasks within relation extraction, can be solved by simpler pattern matching
 methods such as Hearst patterns \citep{hearst1992automatic}, whereas harder relation extraction  
 sub-tasks might require modeling complex cross-sentence relations \citep{peng2017cross}.
@@ -44,7 +39,6 @@ architectures, and often involve end-to-end learning of intermediate features.  
 boundaries of NLU fuzzier, the core intuitions still remain, and the distinction can still be made
 in terms of complexity of models, with modeling non-NLU tasks generally requiring simpler models
 \citep{wang2015part} than NLU tasks \citep{chen2017enhanced}, given sufficiently large datasets.
-
 In this thesis, we rely heavily on representation learning and deep learning techniques. Our focus
 is to study how we can improve the quality of the semantics extracted from the inputs, and make
 reasoning more effective.  Accordingly, we will choose a subset of tasks that are closer to the NLU
@@ -53,7 +47,7 @@ end of the spectrum described above, and build computational systems for them.
 Now that we have informally characterized the tasks we are interested in,
 let us identify what goes into building systems for those tasks.  Consider Question Answering (QA),
 which refers to answering questions about a span of text, or other structured knowledge
-representations like knowledge bases or even images.  QA systems are required to encode the meaning
+representations like knowledge bases.  QA systems are required to encode the meaning
 of the provided inputs such that the relevant bits of information can be retrieved to answer
 questions.  Recognizing Textual Entailment (RTE), another NLU task, refers to the problem of
 identifying whether the truth value of some text provided as a hypothesis follows from that of
@@ -65,10 +59,6 @@ subjective information, such that a sentiment classifier can be built using that
 features. To perform well at at each of these tasks, the NLU systems should encode the semantics of
 the input to support the kind of reasoning appropriate for the task. This observation leads us to identifying the
 parts of a generic NLU system as follows.
-
-%\begin{figure} \begin{center} \includegraphics[width=5in]{figures/NLU_spectrum.png} \caption{Various
-%NLP tasks organized in terms of the complexity of semantics needed to solve
-%them.}\label{fig:nlu_spectrum} \end{center} \end{figure}
 
 \subsection{Parts of an NLU system}
 In each of the examples above, it can be noticed that there are two common steps: \textbf{encoding}
@@ -330,7 +320,8 @@ within predicate argument structures, to learn representations of of the implici
 to distinguish anomalous newswire events from normal ones.
 
 \subsection{Reasoning with contextual knowledge} $\textbf{K}_r$ inputs allow NLU systems to reason
-using additional contextual knowledge. Within this thesis, we focus on those tasks where reasoning
+using additional contextual knowledge, that which is used for grounding encoded inputs in the context.
+Within this thesis, we focus on those tasks where reasoning
 can be viewed as semantic parsing problems.  The contexts are often structured in this case. There
 exist both traditional \citep[among
 others]{Zelle1996LearningTP,Zettlemoyer2005LearningTM,zettlemoyer2007online} and neural network
@@ -338,12 +329,12 @@ based methods
 \citep{Dong2016LanguageTL,Andreas2016LearningTC,Liang2016NeuralSM,Neelakantan2016LearningAN} for
 solving these problems. 
 
-Depending on the kind of supervision provided, training semantic parsers might require additional
-contextual knowledge. If supervision does not include the intermediate logical forms
-\citep{berant2013semantic,pasupat2015compositional,krishnamurthy2017neural}, semantic parsing
+Depending on the kind of supervision provided, training semantic parsers might necessitate acquiring
+contextual knowledge indirectly. If supervision does not include the intermediate logical forms
+\citep{berant2013semantic,pasupat2015compositional,krishnamurthy2017neural}, training
 involves some form of a search over the logical form space to find those that correspond to the
-sequence of operations that result in the correct answer.  In that case, contextual knowledge about
-the restrictions of the logical form space can be used to constrain the search process,
+sequence of operations that result in the correct answer.  In that case, relevant contextual knowledge
+would be the restrictions of the logical form space, and it can be used to constrain the search process,
 \citep{xiao2016sequence,krishnamurthy2017neural}, thus making reasoning more efficient.
 
 In the example shown in Figure~\ref{fig:wikitables_example}, the supervision comes only from the
@@ -372,7 +363,8 @@ and maximizing the likelihood of retrieved ones, thereby exploiting the composit
 target language to produce increasingly complex programs. 
 
 \subsection{Evaluating NLU Performance} The effectiveness of NLU systems is often measured in terms
-of their performance at the intended task. The inherent assumption behind taking a task-oriented
+of their performance at the intended task. That is, the entire NLU system is often evaluated based on the
+outputs of the \textit{Reasoning} step. The inherent assumption behind taking a task-oriented
 approach towards building NLU systems is that an improvement in the task performance correlates with
 an improvement in the quality of the semantic representation, and the understanding capability of
 the computational system.  We design our evaluation pipelines in this thesis based on this
@@ -386,13 +378,17 @@ representations, and we evaluate that claim by comparing the performance of a mo
 selectional preferences with that of another that does not, at the task of predicting
 newswire event anomalies.
 
-We test the quality of the encoded representations by running controlled experiments that measure
+We measure the quality of the encoded representations by running controlled experiments that measure
 task performance. While interpreting the encoded representations is also an active research
 topic, it is beyond the scope of this thesis.
 
 \section{Thesis Contributions and Outline}
-In this thesis, we make the following claims, and provide empirical evidence for them:
+The following are the primary contributions of this thesis:
 \begin{enumerate}
+	\setcounter{enumi}{-1}
+	\item We present a general framework for NLU, with \textit{encoding} and \textit{reasoning }
+		as the core components.\\
+	We make the following claims, and provide empirical evidence for them:
 	\item While encoding utterances, incorporating relevant symbolic background knowledge results
 		in better representations of inputs.
 	\item When relevant background knowledge is not explicitly stated in symbolic form,
@@ -401,7 +397,7 @@ In this thesis, we make the following claims, and provide empirical evidence for
 	\item For reasoning tasks that can be cast as problems involving search over a space of
 		discrete compositional operations, incorporating knowledge about the syntax and semantics
 		of the operations into the search process results in more effective reasoning modules.
-	\item Furthermore, knowledge about the compositionality of the target operator space
+	\item Knowledge about the compositionality of the target operator space
 		can be exploited to define a training procedure that can effectively deal with the
 		problem of spuriousness, a significant challenge when training models with weak
 		supervision.

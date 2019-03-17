@@ -208,11 +208,37 @@ this issue could be even more serious. For example, in the NLVR
 dataset~\citep{suhr2017corpus} (one of the datasets we evaluate on in
 Chapter~\ref{chapter:nlvr}), the denotations are binary (True or False), and
 in that case, any random logical form will have a $50\%$ chance of executing to
-the correct answer.
-
-Training a semantic parser on such data will cause the model to quickly overfit to
+the correct answer. Training a semantic parser on such data will cause the model to quickly overfit to
 training examples, and the algorithm used should be designed in such a way that
-the model is biased away from spurious logical forms. We now describe prior
+the model is biased away from spurious logical forms.
+
+It is worth distinguishing the kind of spuriousness we describe here with another kind of
+spuriousness that is more commonly discussed in the context of syntactic parsing. The
+one we described so far is a consequence of the fact that the parsed logical forms
+can be executed to produce a denotation, and several logical forms with varying semantics
+can execute to produce the same denotation. Hence, this may be referred to as 
+\textbf{semantic spuriousness}. However, depending on the way we define the grammar, we
+can end up with multiple logical forms with the same semantics, but with different syntax.
+This may be referred to as \textbf{syntactic spuriousness}, and results in the well known
+\textit{spurious ambiguity} in syntactic parses. Consider the following examples that
+illustrate the distinction. Let us say we have a different question, but on the same table shown in
+Figure~\ref{fig:wikitables_example_weaksup}: \textit{What is the rank of the country that won no gold medals
+and one silver medal?}, and a semantic parser produced the following parses:
+
+\begin{itemize}
+	\item \texttt{(rank (and (gold 0) (silver 1)))}
+	\item \texttt{(rank (and (silver 1) (gold 0)))}
+	\item \texttt{(count (silver (> 0)))}
+\end{itemize}
+
+Note that all three logical forms would produce the same answer (\textit{7}), but the first two logical
+forms have the same semantics. That there can be two different parses which have the same semantics is a consequence of
+syntactic spuriousness. While both kinds of spuriousness can affect the training algorithm, in the context of
+weakly supervised semantic parsing, semantic spuriousness is much more serious since answer-driven
+search algorithms typically produce a lot more semantically spurious logical forms. Consequently, we will focus on
+semantic spuriousness in the rest of this thesis, and whenever we refer to spuriousness, it will be of the semantic kind.
+
+We now describe prior
 techniques used for training semantic parsers with
 weak supervision, and comment on how the issue of spuriousness can be handled in
 each of them.

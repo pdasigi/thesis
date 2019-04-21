@@ -122,7 +122,7 @@
    \clearpage}
 
 \newenvironment{abstract}
-	{\begin{psuedochapter}{Abstract}}{\end{psuedochapter}}
+	{\begin{psuedochapter}{\newpage Abstract}}{\end{psuedochapter}}
 
 \newenvironment{acknowledgments}
 	{\begin{psuedochapter}{Acknowledgments}}{\end{psuedochapter}}

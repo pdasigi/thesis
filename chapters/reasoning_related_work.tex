@@ -362,8 +362,9 @@ other structured prediction problems may be applicable.
 There exists some prior work~\citep{IyyerSQA2016,guu2017bridging} in using 
 structured learning algorithms for semantic parsing. In
 Chapter~\ref{chapter:nlvr}, we consider the use of
-\emph{Expected Risk Minimization} (ERM)~\citep{smith2006minimum}, which we
-briefly describe here.  ERM trains a model to minimize the
+\emph{Minimum Bayes Risk} (MBR)~\citep{goodman1996parsing,goel2000minimum,smith2006minimum}
+training, which we briefly describe here.
+MBR trains a model to minimize the
 expected value of an arbitrary cost function $\mathcal{C}$ as follows:
 \begin{equation}
 \min_{\theta} \sum_{i=1}^{N} \mathbb{E}_{p(y_i|x_i;
@@ -385,17 +386,17 @@ much any given logical form, $y_i$ overlaps with the functions triggered by the
 utterance $x_i$. We show that this additional loss function provides a 
 stronger training signal than a denotation based loss alone.
 
-It may be noted that the ERM objective is also very similar to the RL objective
+It may be noted that the MBR objective is also very similar to the RL objective
 shown in Equation~\ref{eq:rl_objective}. If we expand the expectation, and 
 define a reward function as follows
 \begin{equation}
-	\mathcal{R}_{ERM}(y_i) = -\mathcal{C}(y_i)
+	\mathcal{R}_{MBR}(y_i) = -\mathcal{C}(y_i)
 \end{equation}
 
-\noindent the ERM objective becomes
+\noindent the MBR objective becomes
 \begin{equation}
 	\max_{\theta} \sum_{i=1}^{N} \sum_{y_i \in Y} p(y_i|x_i;\theta)
-	\mathcal{R}_{ERM}(y_i) \label{eq:erm_objective2}	
+	\mathcal{R}_{MBR}(y_i) \label{eq:erm_objective2}	
 \end{equation}
 
 \noindent So like MML, we use beam search to approximate the inner summation,
@@ -422,5 +423,5 @@ structured learning methods and
 propose a reward-guided search technique for weakly supervised semantic parsing.
 
 In Chapter~\ref{chapter:nlvr}, we describe a technique for bridging MML and
-ERM, to iteratively increase the complexity of logical forms that the parser can
+MBR, to iteratively increase the complexity of logical forms that the parser can
 search for during training.

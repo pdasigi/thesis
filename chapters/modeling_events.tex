@@ -271,12 +271,11 @@ uniform.
 \subsection{Language Model Separability}
 Given the annotations, we test to see if the
 sentences corresponding to anomalous events can be separated from normal events 
-by simpler 
-features.  We build an n-gram language model from the training data set used for 
-argument composition and 
-measure the perplexity of the sentences in the test set.  
+using a language model trained on large amounts of unlabeled data. We do this using
+a Masked Language Model built on top of BERT~\citep{devlin2018bert}, with pretrained
+weights from BERT-Base, and measure the perplexity of the sentences in the test set. 
 Figure~\ref{fig:nem_lm_ppl} shows
-a comparison of the perplexity scores for different labels. If the n-gram 
+a comparison of the perplexity scores for different labels. If the language model 
 features are enough 
 to separate different classes of sentences, one would expect the sentences 
 corresponding to 
@@ -288,13 +287,14 @@ sentences where majority of them contain normal events.  As can be seen in
 Figure~\ref{fig:nem_lm_ppl}, 
 except for a few outliers, most data points in all the categories are in similar 
 perplexity ranges.
-Hence, sentences with different labels cannot be separated based on an n-gram 
+Hence, sentences with different labels cannot be separated based on
 language model features.
 
 \begin{figure}
   \begin{center}
-  \includegraphics[width=4in]{figures/perplexity-comparison.png}
-  \caption{Comparison of perplexity scores for different labels}\label{fig:nem_lm_ppl}
+  \includegraphics[width=5in]{figures/perplexity_comparison_bert.png}
+  \caption{Comparison of perplexity scores for different labels. Perplexity scores
+	   are measured using a Masked LM model with BERT}\label{fig:nem_lm_ppl}
   \end{center}
 \end{figure}
 

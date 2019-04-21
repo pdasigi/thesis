@@ -393,8 +393,8 @@ distribution.
 		LSTM-PP & GloVe & - & 1.3 & 84.3 \\
 		LSTM-PP & GloVe-retro & WordNet & 1.3 & 84.8 \\
 		LSTM-PP w/ ELMo & GloVe + ELMo & LM trained on 1B words &
-		95 & 89.0 \\
-		OntoLSTM-PP & GloVe-extended & WordNet & 2 & \textbf{89.7} \\
+		95 & 89.3 $\pm$ 0.3 \\
+		OntoLSTM-PP & GloVe-extended & WordNet & 2 & 89.3 $\pm$ 0.5 \\
 		\bottomrule
 	\end{tabular}
 	\caption{Prepositional Phrase Attachment results with OntoLSTM in
@@ -419,8 +419,11 @@ sensitive distribution over synsets is a more effective way of making use of
 WordNet.
 
 Using ELMo embeddings in the \textit{LSTM-PP} model closes the gap between the
-LSTM models and \textit{OntoLSTM-PP} to a large extent, but not completely.
-It has to be noted that the model with ELMo has more than $40$ times more
+LSTM models and \textit{OntoLSTM-PP}. Table~\ref{tab:ontolstm_direct_ppa_results} shows
+mean and standard deviation of the test accuracy over 4 models trained with different random
+seeds. It can be seen that the accuracies of the OntoLSTM-PP model and the LSTM-PP model
+with ELMo are not significantly different.
+However, it has to be noted that the model with ELMo has more than $40$ times more
 parameters than the OntoLSTM model.
 
 \paragraph{Effect on dependency parsing.} Following
@@ -655,19 +658,26 @@ the model size in \textit{LSTM-TE} and both variants of \textit{OntoLSTM-TE} are
 (11.1M and 12.7M parameters, respectively).
 
 \section{Conclusion}
+\subsection{Summary}
 In this chapter, we showed a procedure for grounding of lexical items which acknowledges the semantic ambiguity 
 of word types using WordNet and a way to learn a context-sensitive distribution over their representations.
 We also showed how to integrate the proposed representation with recurrent neural networks for modeling sentences,
 showing that the proposed WordNet-grounded context-sensitive token embeddings outperforms standard type-level embeddings
 for predicting PP attachments and textual entailment. For PP attachments, we
-also showed that our model outperforms a baseline model with ELMo embeddings.
+also showed that our model performs comparable to a baseline model with ELMo embeddings, even though
+our model has only a fraction of the number of parameters as the ELMo model.
 This result suggests that symbolic ontologies like WordNet may be able to
-provide knowledge that cannot be substituted by language models trained on large
-amounts of unlabeled texts.
+provide knowledge that lets us build simpler models than the ones that rely on large language models.
 
+\subsection{Future Work}
 We encoded a specific kind of background knowledge using WordNet in this work, but the methods described here can be extended 
 to other kinds of structured knowledge sources as well. For example, one can effectively encode entities in text, using structured information
 from Freebase. Such a model may help tasks like factual question answering.
+
+We compared the performance of our model that relies on knowledge from symbolic knowledge bases
+to one that relies on large language models in Table~\ref{tab:ontolstm_direct_ppa_results}. However, it has to be noted that the two kinds of knowledge
+are compatible with each other, and potential future work includes models with make use to both
+kinds of knowledge.
 
 One potential issue with the approach suggested in this chapter is
 linking ambiguity. That is, deciding which entities in the background knowledge base, or concepts in the background ontology can be linked to
